@@ -12,13 +12,13 @@ let gameEnded = false;
  ****************************************************/
 function createDeck() {
   const colors = ["red", "blue", "green", "yellow"];
-  const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  const numbers = [1,2,3,4,5,6,7,8,9];
   let newDeck = [];
 
   for (let color of colors) {
     for (let num of numbers) {
-      newDeck.push({ color, value: num });
-      newDeck.push({ color, value: num });
+      newDeck.push({color, value: num});
+      newDeck.push({color, value: num});
     }
   }
   return newDeck;
@@ -83,7 +83,7 @@ function renderHand() {
     cardEl.textContent = card.value;
     cardEl.setAttribute("data-value", card.value);
 
-    // Ao clicar, tenta descartar
+    // Clique descarta a carta (vai para banimento)
     cardEl.addEventListener("click", () => {
       discardCard(index);
     });
@@ -105,7 +105,7 @@ function renderBanishedCards() {
   banishSection.classList.remove("hidden");
   banishedDiv.innerHTML = "";
 
-  banishedCards.forEach((card) => {
+  banishedCards.forEach(card => {
     const cardEl = document.createElement("div");
     cardEl.classList.add("card", card.color);
     cardEl.textContent = card.value;
@@ -131,10 +131,12 @@ function drawCard() {
     return;
   }
 
+  // Compra 1 carta
   playerHand.push(deck.pop());
-  renderHand();
   document.getElementById("message").textContent =
     "Você comprou uma carta. Agora pode descartar.";
+
+  renderHand();
 }
 
 /****************************************************
@@ -143,39 +145,41 @@ function drawCard() {
 function discardCard(cardIndex) {
   if (!gameStarted || gameEnded) return;
 
-  // Se está com 10 cartas, não pode descartar (tem que comprar antes)
+  // Se está com 10 cartas, precisa comprar
   if (playerHand.length === 10) {
-    alert("Você está com 10 cartas, precisa comprar antes de descartar!");
+    alert("Você está com 10 cartas, deve comprar antes de descartar!");
     return;
   }
 
-  // Agora pode descartar (com 11 cartas)
+  // Remove do array e manda para banidos
   const discarded = playerHand.splice(cardIndex, 1)[0];
-  banishedCards.push(discarded); // Adiciona carta ao banimento
-  document.getElementById("message").textContent = `Você descartou ${discarded.value} de ${discarded.color}.`;
+  banishedCards.push(discarded);
+
+  document.getElementById("message").textContent = 
+    `Você descartou ${discarded.value} de ${discarded.color}.`;
 
   renderHand();
   renderBanishedCards();
 }
 
 /****************************************************
- * VERIFICAR BATER (3/3/3/2)
+ * VERIFICAR SE PODE BATER (3/3/3/2)
  ****************************************************/
 function checkWin() {
   if (!gameStarted || gameEnded) return;
 
-  const currentHand = [...playerHand];
-
-  if (currentHand.length < 10) {
+  // Precisa ter pelo menos 10 cartas para verificar
+  if (playerHand.length < 10) {
     document.getElementById("message").textContent =
       "Você não tem cartas suficientes para bater.";
     return;
   }
 
+  const currentHand = [...playerHand];
   if (canMahjong(currentHand)) {
     document.getElementById("message").textContent =
       "Parabéns! Você conseguiu bater (3/3/3/2)! Jogo encerrado.";
-    gameEnded = true; // marca o fim do jogo
+    gameEnded = true;
   } else {
     document.getElementById("message").textContent =
       "Ainda não é possível bater.";
@@ -186,6 +190,7 @@ function checkWin() {
  * canMahjong: lógica simples p/ 3/3/3 + 2
  ****************************************************/
 function canMahjong(hand) {
+  // Ordena normal (por cor, depois valor)
   hand.sort((a, b) => {
     if (a.color === b.color) {
       return a.value - b.value;
@@ -220,7 +225,7 @@ function canMahjong(hand) {
     return c.length === 2 && c[0].value === c[1].value;
   }
 
-  // Gera combos de 3
+  // Gera combinações de 3
   let combos3 = [];
   for (let i = 0; i < hand.length - 2; i++) {
     for (let j = i + 1; j < hand.length - 1; j++) {
@@ -232,6 +237,7 @@ function canMahjong(hand) {
 
   function attempt(remaining, sets = 0) {
     if (sets === 3) {
+      // O que sobrar deve ser um par
       if (remaining.length === 2 && isPair(remaining)) {
         return true;
       }
@@ -265,71 +271,75 @@ function canMahjong(hand) {
 }
 
 /****************************************************
- * NOVAS FUNÇÕES DE ORGANIZAÇÃO (Sequência / Grupo)
+ * ORGANIZAÇÃO DAS CARTAS (Sequência / Grupo) 
+ * + 1 e 9 no INÍCIO
  ****************************************************/
 function sortBySequence() {
   if (!gameStarted || gameEnded) return;
 
-  // Prioriza 1 e 9
-  playerHand = sortHandByPriority(playerHand);
+  // Primeiro prioriza 1 e 9 (vão ao início)
+  playerHand.sort((a, b) => {
+    const isA1or9 = (a.value === 1 || a.value === 9);
+    const isB1or9 = (b.value === 1 || b.value === 9);
+    if (isA1or9 && !isB1or9) return -1;
+    if (isB1or9 && !isA1or9) return 1;
+    return 0;
+  });
 
-  // Ordena por cor e valor
+  // Depois ordena por cor e valor
   playerHand.sort((a, b) => {
     if (a.color < b.color) return -1;
     if (a.color > b.color) return 1;
     return a.value - b.value;
   });
+
+  document.getElementById("message").textContent = 
+    "Organizado por Sequências (cartas 1 e 9 no início).";
   renderHand();
-  document.getElementById("message").textContent =
-    "Organizado por Sequências (cor depois valor, com 1 e 9 no início).";
 }
 
 function sortByGroup() {
   if (!gameStarted || gameEnded) return;
 
-  // Prioriza 1 e 9
-  playerHand = sortHandByPriority(playerHand);
+  // Primeiro prioriza 1 e 9 (vão ao início)
+  playerHand.sort((a, b) => {
+    const isA1or9 = (a.value === 1 || a.value === 9);
+    const isB1or9 = (b.value === 1 || b.value === 9);
+    if (isA1or9 && !isB1or9) return -1;
+    if (isB1or9 && !isA1or9) return 1;
+    return 0;
+  });
 
-  // Ordena por valor e cor
+  // Depois ordena por valor e cor
   playerHand.sort((a, b) => {
     if (a.value === b.value) {
       return a.color.localeCompare(b.color);
     }
     return a.value - b.value;
   });
-  renderHand();
-  document.getElementById("message").textContent =
-    "Organizado por Grupos (valor depois cor, com 1 e 9 no início).";
-}
 
-/****************************************************
- * FUNÇÃO PARA PRIORIZAR 1 E 9
- ****************************************************/
-function sortHandByPriority(hand) {
-  return hand.sort((a, b) => {
-    if (a.value === 1 || a.value === 9) return -1;
-    if (b.value === 1 || b.value === 9) return 1;
-    return 0;
-  });
+  document.getElementById("message").textContent = 
+    "Organizado por Grupos (cartas 1 e 9 no início).";
+  renderHand();
 }
 
 /****************************************************
  * EVENT LISTENERS
  ****************************************************/
 window.onload = () => {
-  // Botão Iniciar Jogo
+  // Botões iniciais
   document.getElementById("btnStart").addEventListener("click", startGame);
-
-  // Botão Reiniciar Jogo (Reset total)
   document.getElementById("btnRestart").addEventListener("click", () => {
     resetGameState();
     document.getElementById("message").textContent =
       "Jogo reiniciado. Clique em 'Iniciar Jogo' para jogar novamente.";
   });
 
-  // Botões de ação do jogo
+  // Ações de jogo
   document.getElementById("btnDraw").addEventListener("click", drawCard);
   document.getElementById("btnCheckWin").addEventListener("click", checkWin);
+
+  // Organizações
   document.getElementById("btnSortSequence").addEventListener("click", sortBySequence);
   document.getElementById("btnSortGroup").addEventListener("click", sortByGroup);
 
@@ -338,12 +348,12 @@ window.onload = () => {
   const helpModal = document.getElementById("helpModal");
   const closeModal = document.getElementById("closeModal");
 
-  // Abrir modal
+  // Abrir modal de ajuda
   btnHelp.addEventListener("click", () => {
     helpModal.classList.remove("hidden");
   });
 
-  // Fechar modal ao clicar no "X"
+  // Fechar modal ao clicar no X
   closeModal.addEventListener("click", () => {
     helpModal.classList.add("hidden");
   });
