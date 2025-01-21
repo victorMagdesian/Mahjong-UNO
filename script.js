@@ -141,7 +141,7 @@ function drawCard() {
   // Compra 1 carta
   playerHand.push(deck.pop());
   document.getElementById("message").textContent =
-    "Você comprou uma carta. Agora pode descartar.";
+    "Você comprou uma carta. Agora deve descartar.";
 
   // Se havia um método de sort escolhido, reaplica
   if (currentSortMethod === "sequence") {
@@ -153,13 +153,14 @@ function drawCard() {
   renderHand();
 }
 
+
 /****************************************************
  * DESCARTAR CARTA
  ****************************************************/
 function discardCard(cardIndex) {
   if (!gameStarted || gameEnded) return;
 
-  // Se está com 11 cartas, precisa comprar
+  // Se está com 11 cartas, precisa comprar antes de descartar
   if (playerHand.length === 11) {
     alert("Você está com 11 cartas, deve comprar antes de descartar!");
     return;
@@ -175,6 +176,7 @@ function discardCard(cardIndex) {
   renderHand();
   renderBanishedCards();
 }
+
 
 /****************************************************
  * VERIFICAR SE PODE BATER (3/3/3/2)
