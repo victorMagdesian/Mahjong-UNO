@@ -15,23 +15,13 @@
     <!-- Seção principal do jogo (escondida até iniciar) -->
     <div id="gameSection" class="hidden">
       <div>
-        <h2>Carta Comprada</h2>
-        <div id="boughtCard" class="card-area single-card-area"></div>
-      </div>
-      
-      <div id="victoryScreen" class="hidden">
-        <div class="mandala"></div>
-        <h1 class="victory-text">VITÓRIA</h1>
-      </div>
-
-      <div>
         <h2>Sua Mão</h2>
         <div id="playerHand" class="card-area"></div>
       </div>
 
       <div class="controls">
         <button id="btnDraw" class="btn">Comprar Carta</button>
-
+        <button id="btnCheckWin" class="btn">Verificar Bater</button>
         
         <!-- Botões de organização tipo "switch" -->
         <button id="btnSortSequence" class="btn sort-switch">Organizar Sequências</button>
@@ -62,14 +52,14 @@
         <h3>Cartas 1 e 9</h3>
         <p>
           As cartas de valor <strong>1</strong> e <strong>9</strong> não são removidas automaticamente na compra, mas 
-          <strong>São exclusivas de descarte</strong>. Todas as cartas descartadas (incluindo 1 e 9) 
+          <strong>sempre aparecem no início da mão</strong> ao organizar. Todas as cartas descartadas (incluindo 1 e 9) 
           vão para a seção “Cartas Banidas”.
         </p>
 
         <h3>Como Jogar</h3>
         <ol>
-          <li>Você começa com 11 cartas.</li>
-          <li>Se tiver 11 cartas, compre 1 carta. Se tiver 12, descarte 1 carta clicando nela.</li>
+          <li>Você começa com 10 cartas.</li>
+          <li>Se tiver 10 cartas, compre 1 carta. Se tiver 11, descarte 1 carta clicando nela.</li>
           <li>Use “Organizar Sequências” ou “Organizar Grupos” para escolher um método de ordenação. Sempre que comprar, o jogo reaplica o método atual.</li>
           <li><strong>Bater</strong>: se conseguir 3/3/3/2 (3 trincas/sequências + 1 par), clique em “Verificar Bater”.</li>
         </ol>

@@ -44,8 +44,8 @@ function shuffle(array) {
 function startGame() {
   resetGameState();
 
-  // O jogo começa com 11 cartas
-  for (let i = 0; i < 11; i++) {
+  // O jogo começa com 10 cartas
+  for (let i = 0; i < 10; i++) {
     playerHand.push(deck.pop());
   }
 
@@ -127,9 +127,9 @@ function renderBanishedCards() {
 function drawCard() {
   if (!gameStarted || gameEnded) return;
 
-  // Se já tem 12 cartas, não pode comprar
-  if (playerHand.length === 12) {
-    alert("Você está com 12 cartas, precisa descartar antes de comprar!");
+  // Se já tem 11 cartas, não pode comprar
+  if (playerHand.length === 11) {
+    alert("Você está com 11 cartas, precisa descartar antes de comprar!");
     return;
   }
 
@@ -138,19 +138,14 @@ function drawCard() {
     return;
   }
 
-  // Compra uma carta
-  const boughtCard = deck.pop();
-  playerHand.push(boughtCard);
-
-  // Renderiza a carta comprada
-  renderBoughtCard(boughtCard);
-
+  // Compra 1 carta
+  playerHand.push(deck.pop());
   document.getElementById("message").textContent =
-    "Você comprou uma carta. Agora deve descartar.";
+    "Você comprou uma carta. Agora pode descartar.";
 
-  // Reaplica o sort atual, se existir
+  // Se havia um método de sort escolhido, reaplica
   if (currentSortMethod === "sequence") {
-    sortBySequence(false);
+    sortBySequence(false); // false para não mudar currentSortMethod
   } else if (currentSortMethod === "group") {
     sortByGroup(false);
   }
@@ -158,73 +153,15 @@ function drawCard() {
   renderHand();
 }
 
-function renderBoughtCard(card) {
-  const boughtCardDiv = document.getElementById("boughtCard");
-  boughtCardDiv.innerHTML = ""; // Limpa o espaço para nova carta
-
-  const cardEl = document.createElement("div");
-  cardEl.classList.add("card", "bought-card", card.color);
-  cardEl.textContent = card.value;
-  cardEl.setAttribute("data-value", card.value);
-
-  // Adiciona evento para descartar a própria carta comprada
-  cardEl.addEventListener("click", () => {
-    discardBoughtCard(card);
-  });
-
-  boughtCardDiv.appendChild(cardEl);
-}
-
-function discardBoughtCard(card) {
-  if (!gameStarted || gameEnded) return;
-
-  // Se está com 11 cartas, precisa comprar antes de descartar
-  if (playerHand.length === 11) {
-    alert("Você está com 11 cartas, deve comprar antes de descartar!");
-    return;
-  }
-
-  // Remove a carta comprada da mão
-  const index = playerHand.findIndex(
-    (c) => c.value === card.value && c.color === card.color
-  );
-  if (index !== -1) {
-    playerHand.splice(index, 1);
-  }
-
-  // Adiciona ao banimento
-  banishedCards.push(card);
-
-  document.getElementById("message").textContent = 
-    `Você descartou a carta comprada: ${card.value} de ${card.color}.`;
-
-  renderHand();
-  renderBanishedCards();
-  clearBoughtCard();
-
-  // Verifica se o jogador venceu
-  if (checkWin(playerHand)) {
-    showVictoryScreen();
-  }
-}
-
-
-function clearBoughtCard() {
-  const boughtCardDiv = document.getElementById("boughtCard");
-  boughtCardDiv.innerHTML = ""; // Limpa a área da carta comprada
-}
-
-
-
 /****************************************************
  * DESCARTAR CARTA
  ****************************************************/
 function discardCard(cardIndex) {
   if (!gameStarted || gameEnded) return;
 
-  // Se está com 11 cartas, precisa comprar antes de descartar
-  if (playerHand.length === 11) {
-    alert("Você está com 11 cartas, deve comprar antes de descartar!");
+  // Se está com 10 cartas, precisa comprar
+  if (playerHand.length === 10) {
+    alert("Você está com 10 cartas, deve comprar antes de descartar!");
     return;
   }
 
@@ -237,109 +174,31 @@ function discardCard(cardIndex) {
 
   renderHand();
   renderBanishedCards();
-
-  // Verifica se o jogador venceu
-  if (checkWin(playerHand)) {
-    showVictoryScreen();
-  }
 }
-
-
-
-function showVictoryScreen() {
-  const victoryScreen = document.getElementById("victoryScreen");
-  victoryScreen.classList.remove("hidden");
-
-  // Finaliza o jogo
-  gameEnded = true;
-  document.getElementById("message").textContent = "Parabéns! Você venceu o jogo!";
-}
-
 
 /****************************************************
  * VERIFICAR SE PODE BATER (3/3/3/2)
  ****************************************************/
-function checkWin(hand) {
-  // Ordena normal (por cor, depois valor)
-  hand.sort((a, b) => {
-    if (a.color === b.color) {
-      return a.value - b.value;
-    }
-    return a.color.localeCompare(b.color);
-  });
+function checkWin() {
+  if (!gameStarted || gameEnded) return;
 
-  function isRun(c) {
-    if (c.length !== 3) return false;
-    const [c1, c2, c3] = c;
-    return (
-      c1.color === c2.color &&
-      c2.color === c3.color &&
-      c2.value === c1.value + 1 &&
-      c3.value === c2.value + 1
-    );
+  // Precisa ter pelo menos 10 cartas para verificar
+  if (playerHand.length < 10) {
+    document.getElementById("message").textContent =
+      "Você não tem cartas suficientes para bater.";
+    return;
   }
 
-  function isGroup(c) {
-    if (c.length !== 3) return false;
-    const [c1, c2, c3] = c;
-    return (
-      c1.value === c2.value &&
-      c2.value === c3.value &&
-      c1.color !== c2.color &&
-      c2.color !== c3.color &&
-      c1.color !== c3.color
-    );
+  const currentHand = [...playerHand];
+  if (canMahjong(currentHand)) {
+    document.getElementById("message").textContent =
+      "Parabéns! Você conseguiu bater (3/3/3/2)! Jogo encerrado.";
+    gameEnded = true;
+  } else {
+    document.getElementById("message").textContent =
+      "Ainda não é possível bater.";
   }
-
-  function isPair(c) {
-    return c.length === 2 && c[0].value === c[1].value;
-  }
-
-  // Gera combinações de 3
-  let combos3 = [];
-  for (let i = 0; i < hand.length - 2; i++) {
-    for (let j = i + 1; j < hand.length - 1; j++) {
-      for (let k = j + 1; k < hand.length; k++) {
-        combos3.push([i, j, k]);
-      }
-    }
-  }
-
-  function attempt(remaining, sets = 0) {
-    if (sets === 3) {
-      // O que sobrar deve ser um par
-      if (remaining.length === 2 && isPair(remaining)) {
-        return true;
-      }
-      return false;
-    }
-    for (let combo of combos3) {
-      let [x, y, z] = combo;
-      if (
-        x >= remaining.length ||
-        y >= remaining.length ||
-        z >= remaining.length
-      ) {
-        continue;
-      }
-      let testSet = [remaining[x], remaining[y], remaining[z]].sort(
-        (a, b) => a.value - b.value
-      );
-      if (isRun(testSet) || isGroup(testSet)) {
-        let newRem = remaining.filter(
-          (_, idx) => idx !== x && idx !== y && idx !== z
-        );
-        if (attempt(newRem, sets + 1)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  return attempt(hand, 0);
 }
-
 
 /****************************************************
  * canMahjong: lógica simples p/ 3/3/3 + 2

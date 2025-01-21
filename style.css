@@ -200,37 +200,6 @@ h1 {
   cursor: pointer;
 }
 
-/* Área para a carta comprada */
-.single-card-area {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 10px 0;
-}
-
-.bought-card {
-  animation: highlight 0.5s ease-in-out;
-  border: 3px solid #00ff00;
-  box-shadow: 0 0 15px #00ff00;
-}
-
-/* Destaque para a última carta descartada */
-.discarded-card {
-  border: 3px solid #ff0000;
-  box-shadow: 0 0 15px #ff0000;
-}
-
-/* Animação para destaque */
-@keyframes highlight {
-  0% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-
 /* Responsividade */
 @media (max-width: 600px) {
   .card {
@@ -242,70 +211,4 @@ h1 {
   .card::after {
     font-size: 0.7em;
   }
-
-  /* Mandala girando */
-.mandala {
-  width: 150px;
-  height: 150px;
-  border: 15px solid #4caf50;
-  border-radius: 50%;
-  border-top: 15px solid transparent;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  animation: spin 2s linear infinite;
-  z-index: 10;
-}
-
-/* Animação de giro */
-@keyframes spin {
-  0% {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-  100% {
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
-}
-
-/* Texto de vitória */
-.victory-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 3rem;
-  color: #4caf50;
-  font-weight: bold;
-  text-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
-  z-index: 11;
-  animation: victoryFadeIn 1.5s ease-in-out;
-}
-
-/* Animação de fade-in */
-@keyframes victoryFadeIn {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.8);
-  }
-  100% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-}
-
-/* Fundo escuro para a tela de vitória */
-#victoryScreen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.8);
-  z-index: 9;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 }
