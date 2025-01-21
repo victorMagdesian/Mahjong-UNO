@@ -198,11 +198,16 @@ function discardBoughtCard(card) {
   document.getElementById("message").textContent = 
     `Você descartou a carta comprada: ${card.value} de ${card.color}.`;
 
-  // Atualiza o destaque de descarte
   renderHand();
   renderBanishedCards();
   clearBoughtCard();
+
+  // Verifica se o jogador venceu
+  if (checkWin(playerHand)) {
+    showVictoryScreen();
+  }
 }
+
 
 function clearBoughtCard() {
   const boughtCardDiv = document.getElementById("boughtCard");
@@ -227,43 +232,114 @@ function discardCard(cardIndex) {
   const discarded = playerHand.splice(cardIndex, 1)[0];
   banishedCards.push(discarded);
 
-  // Atualiza visualmente o descarte
-  const handDiv = document.getElementById("playerHand");
-  const cardEl = handDiv.children[cardIndex];
-  cardEl.classList.add("discarded-card");
-
   document.getElementById("message").textContent = 
     `Você descartou ${discarded.value} de ${discarded.color}.`;
 
   renderHand();
   renderBanishedCards();
+
+  // Verifica se o jogador venceu
+  if (checkWin(playerHand)) {
+    showVictoryScreen();
+  }
 }
 
+
+
+function showVictoryScreen() {
+  const victoryScreen = document.getElementById("victoryScreen");
+  victoryScreen.classList.remove("hidden");
+
+  // Finaliza o jogo
+  gameEnded = true;
+  document.getElementById("message").textContent = "Parabéns! Você venceu o jogo!";
+}
 
 
 /****************************************************
  * VERIFICAR SE PODE BATER (3/3/3/2)
  ****************************************************/
-function checkWin() {
-  if (!gameStarted || gameEnded) return;
+function checkWin(hand) {
+  // Ordena normal (por cor, depois valor)
+  hand.sort((a, b) => {
+    if (a.color === b.color) {
+      return a.value - b.value;
+    }
+    return a.color.localeCompare(b.color);
+  });
 
-  // Precisa ter pelo menos 11 cartas para verificar
-  if (playerHand.length < 11) {
-    document.getElementById("message").textContent =
-      "Você não tem cartas suficientes para bater.";
-    return;
+  function isRun(c) {
+    if (c.length !== 3) return false;
+    const [c1, c2, c3] = c;
+    return (
+      c1.color === c2.color &&
+      c2.color === c3.color &&
+      c2.value === c1.value + 1 &&
+      c3.value === c2.value + 1
+    );
   }
 
-  const currentHand = [...playerHand];
-  if (canMahjong(currentHand)) {
-    document.getElementById("message").textContent =
-      "Parabéns! Você conseguiu bater (3/3/3/2)! Jogo encerrado.";
-    gameEnded = true;
-  } else {
-    document.getElementById("message").textContent =
-      "Ainda não é possível bater.";
+  function isGroup(c) {
+    if (c.length !== 3) return false;
+    const [c1, c2, c3] = c;
+    return (
+      c1.value === c2.value &&
+      c2.value === c3.value &&
+      c1.color !== c2.color &&
+      c2.color !== c3.color &&
+      c1.color !== c3.color
+    );
   }
+
+  function isPair(c) {
+    return c.length === 2 && c[0].value === c[1].value;
+  }
+
+  // Gera combinações de 3
+  let combos3 = [];
+  for (let i = 0; i < hand.length - 2; i++) {
+    for (let j = i + 1; j < hand.length - 1; j++) {
+      for (let k = j + 1; k < hand.length; k++) {
+        combos3.push([i, j, k]);
+      }
+    }
+  }
+
+  function attempt(remaining, sets = 0) {
+    if (sets === 3) {
+      // O que sobrar deve ser um par
+      if (remaining.length === 2 && isPair(remaining)) {
+        return true;
+      }
+      return false;
+    }
+    for (let combo of combos3) {
+      let [x, y, z] = combo;
+      if (
+        x >= remaining.length ||
+        y >= remaining.length ||
+        z >= remaining.length
+      ) {
+        continue;
+      }
+      let testSet = [remaining[x], remaining[y], remaining[z]].sort(
+        (a, b) => a.value - b.value
+      );
+      if (isRun(testSet) || isGroup(testSet)) {
+        let newRem = remaining.filter(
+          (_, idx) => idx !== x && idx !== y && idx !== z
+        );
+        if (attempt(newRem, sets + 1)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  return attempt(hand, 0);
 }
+
 
 /****************************************************
  * canMahjong: lógica simples p/ 3/3/3 + 2
