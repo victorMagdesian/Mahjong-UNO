@@ -67,6 +67,27 @@ h1 {
   background-color: #d13b3b;
 }
 
+/* Botões de "switch" para o sort */
+.sort-switch {
+  position: relative;
+}
+
+.sort-switch.active::after {
+  content: "✓";
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #0f0;
+  color: #000;
+  width: 20px;
+  height: 20px;
+  font-weight: bold;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 20px;
+  font-size: 1em;
+}
+
 /* Seções */
 .controls {
   margin: 10px 0;

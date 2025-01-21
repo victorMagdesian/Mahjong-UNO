@@ -7,6 +7,9 @@ let banishedCards = [];
 let gameStarted = false;
 let gameEnded = false;
 
+// Armazena o método atual de sort: "sequence", "group" ou null
+let currentSortMethod = null;
+
 /****************************************************
  * FUNÇÃO: CRIAR BARALHO (UNO 1–9, 4 cores, 2 cópias)
  ****************************************************/
@@ -64,6 +67,10 @@ function resetGameState() {
   banishedCards = [];
   gameStarted = false;
   gameEnded = false;
+  currentSortMethod = null;
+
+  // Remove destaque dos botões
+  deactivateSortButtons();
 
   // Esconde a seção do jogo até clicar em "Iniciar Jogo"
   document.getElementById("gameSection").classList.add("hidden");
@@ -135,6 +142,13 @@ function drawCard() {
   playerHand.push(deck.pop());
   document.getElementById("message").textContent =
     "Você comprou uma carta. Agora pode descartar.";
+
+  // Se havia um método de sort escolhido, reaplica
+  if (currentSortMethod === "sequence") {
+    sortBySequence(false); // false para não mudar currentSortMethod
+  } else if (currentSortMethod === "group") {
+    sortByGroup(false);
+  }
 
   renderHand();
 }
@@ -271,13 +285,17 @@ function canMahjong(hand) {
 }
 
 /****************************************************
- * ORGANIZAÇÃO DAS CARTAS (Sequência / Grupo) 
- * + 1 e 9 no INÍCIO
+ * ORGANIZAÇÃO DAS CARTAS + 1 e 9 no INÍCIO
+ * Com "modo" para não sobrescrever currentSortMethod.
  ****************************************************/
-function sortBySequence() {
+function sortBySequence(updateMethod = true) {
   if (!gameStarted || gameEnded) return;
 
-  // Ordena tudo em uma única passada:
+  if (updateMethod) {
+    currentSortMethod = "sequence";
+    activateSortButton("btnSortSequence");
+  }
+  // Ordena tudo em uma passada:
   // 1) Coloca 1 e 9 no início
   // 2) Depois ordena por cor e valor
   playerHand.sort((a, b) => {
@@ -288,11 +306,9 @@ function sortBySequence() {
     if (isA19 && !isB19) return -1;
     if (isB19 && !isA19) return 1;
 
-    // Se nenhum (ou ambos) são 1/9, ordena por cor
+    // Se ambos ou nenhum é 1/9, ordena por cor e valor
     if (a.color < b.color) return -1;
     if (a.color > b.color) return 1;
-
-    // Em seguida, ordena por valor
     return a.value - b.value;
   });
 
@@ -301,10 +317,14 @@ function sortBySequence() {
   renderHand();
 }
 
-function sortByGroup() {
+function sortByGroup(updateMethod = true) {
   if (!gameStarted || gameEnded) return;
 
-  // Ordena tudo em uma única passada:
+  if (updateMethod) {
+    currentSortMethod = "group";
+    activateSortButton("btnSortGroup");
+  }
+  // Ordena tudo em uma passada:
   // 1) Coloca 1 e 9 no início
   // 2) Depois ordena por valor, em caso de empate, por cor
   playerHand.sort((a, b) => {
@@ -315,17 +335,36 @@ function sortByGroup() {
     if (isA19 && !isB19) return -1;
     if (isB19 && !isA19) return 1;
 
-    // Se nenhum (ou ambos) são 1/9, ordena por valor
+    // Se ambos ou nenhum é 1/9, compara pelo valor
     if (a.value !== b.value) {
       return a.value - b.value;
     }
-    // Em caso de empate no valor, ordena por cor
+    // Se tiver o mesmo valor, compara cor
     return a.color.localeCompare(b.color);
   });
 
   document.getElementById("message").textContent = 
     "Organizado por Grupos (1 e 9 no início).";
   renderHand();
+}
+
+/****************************************************
+ * FUNÇÕES PARA ATIVAR/DESATIVAR BOTÕES DE SORT
+ ****************************************************/
+function activateSortButton(buttonId) {
+  // Desativa todos
+  deactivateSortButtons();
+
+  // Ativa o específico
+  const btn = document.getElementById(buttonId);
+  if (btn) {
+    btn.classList.add("active");
+  }
+}
+
+function deactivateSortButtons() {
+  const switches = document.querySelectorAll(".sort-switch");
+  switches.forEach(s => s.classList.remove("active"));
 }
 
 /****************************************************
@@ -345,8 +384,8 @@ window.onload = () => {
   document.getElementById("btnCheckWin").addEventListener("click", checkWin);
 
   // Organizações
-  document.getElementById("btnSortSequence").addEventListener("click", sortBySequence);
-  document.getElementById("btnSortGroup").addEventListener("click", sortByGroup);
+  document.getElementById("btnSortSequence").addEventListener("click", () => sortBySequence(true));
+  document.getElementById("btnSortGroup").addEventListener("click", () => sortByGroup(true));
 
   // Modal de ajuda
   const btnHelp = document.getElementById("btnHelp");

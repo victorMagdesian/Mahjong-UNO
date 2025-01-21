@@ -22,11 +22,13 @@
       <div class="controls">
         <button id="btnDraw" class="btn">Comprar Carta</button>
         <button id="btnCheckWin" class="btn">Verificar Bater</button>
-        <button id="btnSortSequence" class="btn">Organizar Sequências</button>
-        <button id="btnSortGroup" class="btn">Organizar Grupos</button>
+        
+        <!-- Botões de organização tipo "switch" -->
+        <button id="btnSortSequence" class="btn sort-switch">Organizar Sequências</button>
+        <button id="btnSortGroup" class="btn sort-switch">Organizar Grupos</button>
       </div>
 
-      <!-- Seção de Cartas Banidas (todo descarte vai pra cá) -->
+      <!-- Seção de Cartas Banidas -->
       <div id="banishSection" class="hidden">
         <h3>Cartas Banidas</h3>
         <div id="banishedCards" class="card-area"></div>
@@ -49,17 +51,17 @@
 
         <h3>Cartas 1 e 9</h3>
         <p>
-          Cartas <strong>1</strong> e <strong>9</strong> são excluisivas de banimento. Todas as cartas descartadas (incluindo 1 e 9) 
-          são movidas para a seção “Cartas Banidas”.
+          As cartas de valor <strong>1</strong> e <strong>9</strong> não são removidas automaticamente na compra, mas 
+          <strong>São exclusivas de descarte</strong>. Todas as cartas descartadas (incluindo 1 e 9) 
+          vão para a seção “Cartas Banidas”.
         </p>
 
         <h3>Como Jogar</h3>
         <ol>
           <li>Você começa com 10 cartas.</li>
           <li>Se tiver 10 cartas, compre 1 carta. Se tiver 11, descarte 1 carta clicando nela.</li>
-          <li>As cartas que forem descartadas vão para a seção “Cartas Banidas”.</li>
-          <li>Use “Organizar Sequências” ou “Organizar Grupos” para ajudar a ver possíveis combinações.</li>
-          <li><strong>Bater</strong>: se conseguir 3/3/3/2 (três grupos ou sequências de 3 + 1 par de 2), clique em “Verificar Bater”.</li>
+          <li>Use “Organizar Sequências” ou “Organizar Grupos” para escolher um método de ordenação. Sempre que comprar, o jogo reaplica o método atual.</li>
+          <li><strong>Bater</strong>: se conseguir 3/3/3/2 (3 trincas/sequências + 1 par), clique em “Verificar Bater”.</li>
         </ol>
 
         <p>
