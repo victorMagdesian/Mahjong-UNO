@@ -140,7 +140,14 @@ h1 {
   text-align: center;
 }
 
-/* Modal (janela de ajuda) */
+.footer {
+  font-size: 0.9em;
+  color: #ccc;
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* Modal */
 .modal {
   position: fixed;
   z-index: 999;
@@ -171,29 +178,3 @@ h1 {
   font-weight: bold;
   cursor: pointer;
 }
-
-/* RESPONSIVIDADE */
-@media (max-width: 600px) {
-  .card {
-    width: 60px;
-    height: 90px;
-    font-size: 1.4em;
-  }
-  .card::before,
-  .card::after {
-    font-size: 0.7em;
-  }
-
-  .container {
-    padding: 10px;
-  }
-  .controls {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .btn {
-    margin: 5px 8px;
-  }
-}
-
