@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mahjong-UNO (Versão Solo)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Mahjong-UNO (Versão Solo)</h1>
+    <button id="btnStart" class="btn">Iniciar Jogo</button>
+    <button id="btnHelp" class="btn-help">?</button>
+    
+    <!-- Seção principal do jogo (escondida até iniciar) -->
+    <div id="gameSection" class="hidden">
+      <div>
+        <h2>Sua Mão</h2>
+        <div id="playerHand" class="card-area"></div>
+      </div>
+
+      <div class="controls">
+        <button id="btnDraw" class="btn">Comprar Carta</button>
+        <button id="btnCheckWin" class="btn">Verificar Bater</button>
+        <button id="btnSortSequence" class="btn">Organizar 
+Sequências</button>
+        <button id="btnSortGroup" class="btn">Organizar Grupos</button>
+      </div>
+
+      <!-- Seção de Cartas Banidas (fila de banimento) -->
+      <div id="banishSection" class="hidden">
+        <h3>Cartas Banidas</h3>
+        <div id="banishedCards" class="card-area"></div>
+      </div>
+
+      <div class="controls">
+        <button id="btnRestart" class="btn restart">Reiniciar 
+Jogo</button>
+      </div>
+    </div>
+
+    <!-- Modal/Janela de Regras -->
+    <div id="helpModal" class="modal hidden">
+      <div class="modal-content">
+        <span id="closeModal" class="close">&times;</span>
+        <h2>Regras Mahjong-UNO em Casa</h2>
+
+        <p>
+          <strong>Objetivo:</strong> Formar combinações de cartas em 
+grupos ou sequências (trincas e sequências de 3 cartas, mais 1 par de 2 
+cartas), até obter 3/3/3/2.
+        </p>
+
+        <h3>Cartas 1 e 9</h3>
+        <p>
+          Neste jogo, as cartas de <strong>valor 1 ou 9</strong> são 
+automaticamente <em>banidas</em> no momento em que são compradas. Elas não 
+podem ficar na mão, indo direto para a “Fila de Banimento”.
+        </p>
+
+        <h3>Jogando com um Baralho Convencional</h3>
+        <ol>
+          <li>Use apenas cartas numéricas (A=1 até 9). Remova Reis, Damas, 
+Valetes e 10 para simular 1–9.</li>
+          <li>Separe em 4 naipes (Ouros, Copas, Espadas, Paus). Se quiser 
+duas cópias de cada valor, use 2 baralhos iguais.</li>
+          <li><strong>Cada jogador começa com 10 cartas</strong>.</li>
+          <li>No seu turno:
+            <ul>
+              <li>Se tiver 10 cartas, é obrigatório comprar (mas se vier 1 
+ou 9, a carta será banida automaticamente).</li>
+              <li>Se tiver 11 cartas, é obrigatório descartar.</li>
+            </ul>
+          </li>
+          <li>Quem formar 3/3/3/2 (três trincas e um par) vence.</li>
+        </ol>
+
+        <h3>Jogando com UNO</h3>
+        <ol>
+          <li>Remova as cartas de ação (Skip, Reverse, +2, +4, e zeros), 
+deixando apenas 1–9 em 4 cores (2 cópias cada).</li>
+          <li><strong>Comece com 10 cartas</strong>. Ao comprar, se for 1 
+ou 9, a carta vai para o banimento.</li>
+          <li><em>Grupo (Trinca):</em> 3 cartas do mesmo número, mas cores 
+distintas.<br/>
+              <em>Sequência (Run):</em> 3 cartas da mesma cor, com valores 
+consecutivos.<br/>
+              <em>Par:</em> 2 cartas iguais.</li>
+          <li>Forme 3 grupos/sequências + 1 par para vencer.</li>
+        </ol>
+
+        <p>
+          <strong>Dicas:</strong> Se o baralho acabar, você pode não 
+conseguir comprar. O jogo continua até alguém formar 3/3/3/2 ou até 
+desistirem.
+        </p>
+      </div>
+    </div>
+
+    <div id="message" class="message"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
