@@ -277,49 +277,54 @@ function canMahjong(hand) {
 function sortBySequence() {
   if (!gameStarted || gameEnded) return;
 
-  // Primeiro prioriza 1 e 9 (vão ao início)
+  // Ordena tudo em uma única passada:
+  // 1) Coloca 1 e 9 no início
+  // 2) Depois ordena por cor e valor
   playerHand.sort((a, b) => {
-    const isA1or9 = (a.value === 1 || a.value === 9);
-    const isB1or9 = (b.value === 1 || b.value === 9);
-    if (isA1or9 && !isB1or9) return -1;
-    if (isB1or9 && !isA1or9) return 1;
-    return 0;
-  });
+    const isA19 = (a.value === 1 || a.value === 9);
+    const isB19 = (b.value === 1 || b.value === 9);
 
-  // Depois ordena por cor e valor
-  playerHand.sort((a, b) => {
+    // Prioridade total para 1 e 9
+    if (isA19 && !isB19) return -1;
+    if (isB19 && !isA19) return 1;
+
+    // Se nenhum (ou ambos) são 1/9, ordena por cor
     if (a.color < b.color) return -1;
     if (a.color > b.color) return 1;
+
+    // Em seguida, ordena por valor
     return a.value - b.value;
   });
 
   document.getElementById("message").textContent = 
-    "Organizado por Sequências (cartas 1 e 9 no início).";
+    "Organizado por Sequências (1 e 9 no início).";
   renderHand();
 }
 
 function sortByGroup() {
   if (!gameStarted || gameEnded) return;
 
-  // Primeiro prioriza 1 e 9 (vão ao início)
+  // Ordena tudo em uma única passada:
+  // 1) Coloca 1 e 9 no início
+  // 2) Depois ordena por valor, em caso de empate, por cor
   playerHand.sort((a, b) => {
-    const isA1or9 = (a.value === 1 || a.value === 9);
-    const isB1or9 = (b.value === 1 || b.value === 9);
-    if (isA1or9 && !isB1or9) return -1;
-    if (isB1or9 && !isA1or9) return 1;
-    return 0;
-  });
+    const isA19 = (a.value === 1 || a.value === 9);
+    const isB19 = (b.value === 1 || b.value === 9);
 
-  // Depois ordena por valor e cor
-  playerHand.sort((a, b) => {
-    if (a.value === b.value) {
-      return a.color.localeCompare(b.color);
+    // Prioridade total para 1 e 9
+    if (isA19 && !isB19) return -1;
+    if (isB19 && !isA19) return 1;
+
+    // Se nenhum (ou ambos) são 1/9, ordena por valor
+    if (a.value !== b.value) {
+      return a.value - b.value;
     }
-    return a.value - b.value;
+    // Em caso de empate no valor, ordena por cor
+    return a.color.localeCompare(b.color);
   });
 
   document.getElementById("message").textContent = 
-    "Organizado por Grupos (cartas 1 e 9 no início).";
+    "Organizado por Grupos (1 e 9 no início).";
   renderHand();
 }
 
