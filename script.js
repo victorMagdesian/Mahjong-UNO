@@ -138,20 +138,77 @@ function drawCard() {
     return;
   }
 
-  // Compra 1 carta
-  playerHand.push(deck.pop());
+  // Compra uma carta
+  const boughtCard = deck.pop();
+  playerHand.push(boughtCard);
+
+  // Renderiza a carta comprada
+  renderBoughtCard(boughtCard);
+
   document.getElementById("message").textContent =
     "Você comprou uma carta. Agora deve descartar.";
 
-  // Se havia um método de sort escolhido, reaplica
+  // Reaplica o sort atual, se existir
   if (currentSortMethod === "sequence") {
-    sortBySequence(false); // false para não mudar currentSortMethod
+    sortBySequence(false);
   } else if (currentSortMethod === "group") {
     sortByGroup(false);
   }
 
   renderHand();
 }
+
+function renderBoughtCard(card) {
+  const boughtCardDiv = document.getElementById("boughtCard");
+  boughtCardDiv.innerHTML = ""; // Limpa o espaço para nova carta
+
+  const cardEl = document.createElement("div");
+  cardEl.classList.add("card", "bought-card", card.color);
+  cardEl.textContent = card.value;
+  cardEl.setAttribute("data-value", card.value);
+
+  // Adiciona evento para descartar a própria carta comprada
+  cardEl.addEventListener("click", () => {
+    discardBoughtCard(card);
+  });
+
+  boughtCardDiv.appendChild(cardEl);
+}
+
+function discardBoughtCard(card) {
+  if (!gameStarted || gameEnded) return;
+
+  // Se está com 11 cartas, precisa comprar antes de descartar
+  if (playerHand.length === 11) {
+    alert("Você está com 11 cartas, deve comprar antes de descartar!");
+    return;
+  }
+
+  // Remove a carta comprada da mão
+  const index = playerHand.findIndex(
+    (c) => c.value === card.value && c.color === card.color
+  );
+  if (index !== -1) {
+    playerHand.splice(index, 1);
+  }
+
+  // Adiciona ao banimento
+  banishedCards.push(card);
+
+  document.getElementById("message").textContent = 
+    `Você descartou a carta comprada: ${card.value} de ${card.color}.`;
+
+  // Atualiza o destaque de descarte
+  renderHand();
+  renderBanishedCards();
+  clearBoughtCard();
+}
+
+function clearBoughtCard() {
+  const boughtCardDiv = document.getElementById("boughtCard");
+  boughtCardDiv.innerHTML = ""; // Limpa a área da carta comprada
+}
+
 
 
 /****************************************************
@@ -170,12 +227,18 @@ function discardCard(cardIndex) {
   const discarded = playerHand.splice(cardIndex, 1)[0];
   banishedCards.push(discarded);
 
+  // Atualiza visualmente o descarte
+  const handDiv = document.getElementById("playerHand");
+  const cardEl = handDiv.children[cardIndex];
+  cardEl.classList.add("discarded-card");
+
   document.getElementById("message").textContent = 
     `Você descartou ${discarded.value} de ${discarded.color}.`;
 
   renderHand();
   renderBanishedCards();
 }
+
 
 
 /****************************************************

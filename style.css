@@ -200,6 +200,37 @@ h1 {
   cursor: pointer;
 }
 
+/* Área para a carta comprada */
+.single-card-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.bought-card {
+  animation: highlight 0.5s ease-in-out;
+  border: 3px solid #00ff00;
+  box-shadow: 0 0 15px #00ff00;
+}
+
+/* Destaque para a última carta descartada */
+.discarded-card {
+  border: 3px solid #ff0000;
+  box-shadow: 0 0 15px #ff0000;
+}
+
+/* Animação para destaque */
+@keyframes highlight {
+  0% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+
 /* Responsividade */
 @media (max-width: 600px) {
   .card {
