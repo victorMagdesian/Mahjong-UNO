@@ -39,18 +39,19 @@ function shuffle(array) {
 }
 
 /****************************************************
- * INICIAR JOGO
+ * INICIAR JOGO (mão com 11 cartas)
  ****************************************************/
 function startGame() {
-  resetGameState();
+  resetGameState(); // Limpa baralho, mão e estado
 
-  // O jogo começa com 10 cartas
-  for (let i = 0; i < 10; i++) {
+  // Distribui 11 cartas
+  for (let i = 0; i < 11; i++) {
     playerHand.push(deck.pop());
   }
 
+  // Exibe a seção do jogo
   document.getElementById("gameSection").classList.remove("hidden");
-  document.getElementById("message").textContent = "Jogo iniciado! Boa sorte.";
+  document.getElementById("message").textContent = "Jogo iniciado!";
   gameStarted = true;
   gameEnded = false;
 
@@ -122,58 +123,57 @@ function renderBanishedCards() {
 }
 
 /****************************************************
- * COMPRAR CARTA
+ * COMPRAR CARTA (somente se tiver 11)
  ****************************************************/
 function drawCard() {
   if (!gameStarted || gameEnded) return;
 
-  // Se já tem 11 cartas, não pode comprar
-  if (playerHand.length === 11) {
-    alert("Você está com 11 cartas, precisa descartar antes de comprar!");
+  // Se já tem 12, não pode comprar
+  if (playerHand.length === 12) {
+    alert("Você está com 12 cartas. Descarte antes de comprar novamente!");
     return;
   }
 
   if (deck.length === 0) {
-    alert("O baralho acabou! Não foi possível comprar.");
+    alert("O baralho acabou!");
     return;
   }
 
-  // Compra 1 carta
-  playerHand.push(deck.pop());
-  document.getElementById("message").textContent =
-    "Você comprou uma carta. Agora pode descartar.";
+  // Compra 1 carta (agora fica com 12)
+  const newCard = deck.pop();
+  playerHand.push(newCard);
 
-  // Se havia um método de sort escolhido, reaplica
-  if (currentSortMethod === "sequence") {
-    sortBySequence(false); // false para não mudar currentSortMethod
-  } else if (currentSortMethod === "group") {
-    sortByGroup(false);
-  }
-
+  // Se tiver “renderBoughtCard(newCard)”, chame aqui
   renderHand();
+  document.getElementById("message").textContent = 
+    "Você comprou uma carta. Agora deve descartar!";
 }
 
 /****************************************************
- * DESCARTAR CARTA
+ * DESCARTAR CARTA (somente se tiver 12)
  ****************************************************/
 function discardCard(cardIndex) {
   if (!gameStarted || gameEnded) return;
 
-  // Se está com 10 cartas, precisa comprar
-  if (playerHand.length === 10) {
-    alert("Você está com 10 cartas, deve comprar antes de descartar!");
+  // Se está com 11, deve comprar antes
+  if (playerHand.length === 11) {
+    alert("Você está com 11 cartas. Compre antes de descartar!");
     return;
   }
 
-  // Remove do array e manda para banidos
+  // Remove a carta escolhida da mão (vai pra banidos)
   const discarded = playerHand.splice(cardIndex, 1)[0];
   banishedCards.push(discarded);
 
+  renderHand();
+  renderBanishedCards();
   document.getElementById("message").textContent = 
     `Você descartou ${discarded.value} de ${discarded.color}.`;
 
-  renderHand();
-  renderBanishedCards();
+  // (Se tiver checkWin, chamamos aqui)
+  if (checkWin(playerHand)) {
+    showVictoryScreen();
+  }
 }
 
 /****************************************************
