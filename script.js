@@ -39,13 +39,13 @@ function shuffle(array) {
 }
 
 /****************************************************
- * INICIAR JOGO (mão com 11 cartas)
+ * INICIAR JOGO (mão com 12 cartas)
  ****************************************************/
 function startGame() {
   resetGameState(); // Limpa baralho, mão e estado
 
-  // Distribui 11 cartas
-  for (let i = 0; i < 11; i++) {
+  // Distribui 12 cartas
+  for (let i = 0; i < 12; i++) {
     playerHand.push(deck.pop());
   }
 
@@ -123,7 +123,7 @@ function renderBanishedCards() {
 }
 
 /****************************************************
- * COMPRAR CARTA (somente se tiver 11)
+ * COMPRAR CARTA (somente se tiver 12)
  ****************************************************/
 function drawCard() {
   if (!gameStarted || gameEnded) return;
@@ -155,9 +155,9 @@ function drawCard() {
 function discardCard(cardIndex) {
   if (!gameStarted || gameEnded) return;
 
-  // Se está com 11, deve comprar antes
-  if (playerHand.length === 11) {
-    alert("Você está com 11 cartas. Compre antes de descartar!");
+  // Se está com 12, deve comprar antes
+  if (playerHand.length === 12) {
+    alert("Você está com 12 cartas. Compre antes de descartar!");
     return;
   }
 
@@ -182,8 +182,8 @@ function discardCard(cardIndex) {
 function checkWin() {
   if (!gameStarted || gameEnded) return;
 
-  // Precisa ter pelo menos 10 cartas para verificar
-  if (playerHand.length < 10) {
+  // Precisa ter pelo menos 11 cartas para verificar
+  if (playerHand.length < 11) {
     document.getElementById("message").textContent =
       "Você não tem cartas suficientes para bater.";
     return;
