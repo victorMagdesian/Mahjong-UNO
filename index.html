@@ -20,12 +20,16 @@
       </div>
 
       <div class="controls">
-        <button id="btnDraw" class="btn">Comprar Carta</button>
-        <button id="btnCheckWin" class="btn">Verificar Bater</button>
-        
-        <!-- Botões de organização tipo "switch" -->
+        <div class="controls-top">
+          <button id="btnDraw" class="btn">Comprar Carta</button>
+          <button id="btnCheckWin" class="btn">Verificar Bater</button>  
+        </div>
+        <div class="controls-bot">
+          <!-- Botões de organização tipo "switch" -->
         <button id="btnSortSequence" class="btn sort-switch">Organizar Sequências</button>
         <button id="btnSortGroup" class="btn sort-switch">Organizar Grupos</button>
+        <button id="btnSortVictory" class="btn sort-switch">IA</button>
+        </div>    
       </div>
 
       <!-- Seção de Cartas Banidas -->
@@ -58,8 +62,8 @@
 
         <h3>Como Jogar</h3>
         <ol>
-          <li>Você começa com 11 cartas.</li>
-          <li>Se tiver 11 cartas, compre 1 carta. Se tiver 11, descarte 1 carta clicando nela.</li>
+          <li>Você começa com 10 cartas.</li>
+          <li>Se tiver 10 cartas, compre 1 carta. Se tiver 11, descarte 1 carta clicando nela.</li>
           <li>Use “Organizar Sequências” ou “Organizar Grupos” para escolher um método de ordenação. Sempre que comprar, o jogo reaplica o método atual.</li>
           <li><strong>Bater</strong>: se conseguir 3/3/3/2 (3 trincas/sequências + 1 par), clique em “Verificar Bater”.</li>
         </ol>
