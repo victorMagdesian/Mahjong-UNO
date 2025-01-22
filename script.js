@@ -154,6 +154,51 @@ function drawCard() {
 }
 
 /****************************************************
+ * reasonNotBater(hand)
+ * Faz uma análise minimalista da mão e retorna 
+ * uma string com possíveis causas ou “sobras” que
+ * não formaram 3/3/3/2.
+ ****************************************************/
+function reasonNotBater(hand) {
+  // Se canMahjong(hand) é true, então “Você já bateu”.
+  if (canMahjong(hand)) {
+    return "Você já está em formato 3/3/3 + 2!";
+  }
+
+  // Senão, podemos ver (de modo beeem simples) quantos sets/seqs ela forma:
+  let clusters = createClusters(hand); 
+  // createClusters já gera subgrupos >=3 e leftover
+  // mas não garante EXACT 3 sets e 1 par. 
+  // Então, para um “motivo resumido” basta ver:
+  
+  // Quantos clusters com length==3 e quantos leftover de 1 ou 2
+  let tripleCount = 0;
+  let pairCount = 0;
+  let singleCount = 0;
+
+  clusters.forEach(arr => {
+    if (arr.length === 3) tripleCount++;
+    else if (arr.length === 2) pairCount++;
+    else if (arr.length === 1) singleCount++;
+    // se arr.length>3, pode ter sido fatiado. 
+    // mas assumindo que createClusters retira blocos de 3 e leftover de 1 ou 2
+  });
+
+  // Tentar deduzir um “por que falhou”:
+  // Precisamos 3 “triples” + 1 “pair”
+  if (tripleCount < 3) {
+    return `Faltam mais sets de 3. Você só tem ${tripleCount} sets de 3 formados.`;
+  }
+  else if (pairCount === 0) {
+    return `Falta um par (2 iguais). Você não formou par. Sobras: ${singleCount} cartas soltas.`;
+  }
+  // Em tese, se tripleCount>=3 e pairCount>=1, já bateu, mas vamos
+  // enfatizar single leftover, etc.
+  return `Você quase conseguiu. Verifique se alguma carta extra está impedindo a formação exata 3/3/3/2.`;
+}
+
+
+/****************************************************
  * DESCARTAR CARTA
  ****************************************************/
 function discardCard(cardIndex) {
@@ -175,8 +220,16 @@ function discardCard(cardIndex) {
     `Você descartou ${discarded.value} de ${discarded.color}.`;
 
   if (checkWin()) {
-    showVictoryScreen();
+  } else {
+    if (!canMahjong(playerHand)) {
+      const msg = reasonNotBater(playerHand);
+      console.log("Motivo de não bater:", msg);
+    }
   }
+
+  let { chance, reason } = chanceOfVictoryNextCard();
+  console.log(`Chance de bater na próxima carta: ${(chance*100).toFixed(1)}%`);
+  console.log(`Resumo: ${reason}`);
 }
 
 /****************************************************
@@ -318,6 +371,43 @@ function checkWin() {
     return false;
   }
 }
+
+/****************************************************
+ * chanceOfVictoryNextCard()
+ * Retorna um objeto {chance, reason}
+ ****************************************************/
+function chanceOfVictoryNextCard() {
+  // Se não houver cartas no deck, chance é 0
+  if (deck.length === 0) {
+    return { chance: 0, reason: "Baralho acabou." };
+  }
+
+  let possible = 0;
+  let deckCount = deck.length;
+
+  // Tenta adicionar cada carta do deck hipoteticamente à mão
+  // e checa se `canMahjong` passaria a ser true
+  for (let i = 0; i < deck.length; i++) {
+    const card = deck[i];
+    // Monta “mão hipotética”
+    let hypotheticalHand = [...playerHand, card];
+    if (canMahjong(hypotheticalHand)) {
+      possible++;
+    }
+  }
+
+  let chance = possible / deckCount;
+
+  // Monta um reason (bem simples). 
+  // Exemplo: “X das Y cartas do baralho te fariam bater.”
+  let reason = `${possible} das ${deckCount} cartas possíveis te dariam vitória imediata.`;
+  if (possible === 0) {
+    reason = `Nenhuma das ${deckCount} cartas do baralho te faz bater agora. Continue tentando.`;
+  }
+
+  return { chance, reason };
+}
+
 
 /****************************************************
  * canMahjong: lógica simples p/ 3/3/3 + 2
