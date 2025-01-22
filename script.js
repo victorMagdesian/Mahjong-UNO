@@ -45,7 +45,7 @@ function startGame() {
   resetGameState(); // Limpa baralho, mão e estado
 
   // Distribui 12 cartas
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 11; i++) {
     playerHand.push(deck.pop());
   }
 
