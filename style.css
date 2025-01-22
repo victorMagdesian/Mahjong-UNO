@@ -88,10 +88,41 @@ h1 {
   font-size: 1em;
 }
 
-/* Seções */
+/* Container geral dos controles */
 .controls {
+  display: flex;
+  flex-direction: column; 
+  align-items: center; 
   margin: 10px 0;
 }
+
+/* Linha superior de botões (Comprar e Verificar Bater) */
+.controls-top {
+  display: flex;
+  justify-content: center;
+  gap: 10px; /* Espaço horizontal entre botões */
+  margin-bottom: 10px;
+}
+
+/* Linha inferior de botões (Organizar) */
+.controls-bot {
+  display: flex;
+  justify-content: center;
+  gap: 10px; /* Espaço horizontal entre botões */
+}
+
+/* Botão IA em amarelo pastel */
+#btnSortVictory {
+  background-color: #fdf5cc; /* Tom de amarelo pastel */
+  color: #333;
+  border: 1px solid #dcd3a1; /* Opcional: borda sutil */
+  transition: background-color 0.2s;
+}
+
+#btnSortVictory:hover {
+  background-color: #fcf2a0; /* Um pouquinho mais escuro ao hover */
+}
+
 
 /* Área de cartas */
 .card-area {
