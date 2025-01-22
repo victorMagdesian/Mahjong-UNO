@@ -9,13 +9,46 @@
 <body>
   <div class="container">
     <h1>Mahjong-UNO (Versão Solo)</h1>
+    <div class="modal-content">
+      <span id="closeModal" class="close">&times;</span>
+      <h2>Regras Mahjong-UNO em Casa</h2>
+
+      <p>
+        <strong>Objetivo:</strong> Formar combinações de cartas em grupos ou sequências (trincas e sequências de 3 cartas, mais 1 par de 2 cartas) até obter 3/3/3/2.
+      </p>
+
+      <h3>Cartas 1 e 9</h3>
+      <p>
+        As cartas de valor <strong>1</strong> e <strong>9</strong> não são removidas automaticamente na compra, mas 
+        <strong>sempre aparecem no início da mão</strong> ao organizar. Todas as cartas descartadas (incluindo 1 e 9) 
+        vão para a seção “Cartas Banidas”.
+      </p>
+
+      <h3>Como Jogar</h3>
+      <ol>
+        <li>Você começa com 11 cartas na mão.</li>
+        <li>Se tiver 11, compre 1 carta (que aparece em "Carta Comprada").</li>
+        <li>Para continuar, descarte uma carta da mão (então a carta comprada entra na mão) <em>ou</em> descarte diretamente a carta comprada, se quiser se livrar dela.</li>
+        <li>Use “Organizar Sequências” ou “Organizar Grupos” para escolher um método de ordenação. Sempre que comprar, o jogo reaplica o método atual.</li>
+        <li><strong>Bater</strong>: se conseguir 3/3/3/2 (3 trincas/sequências + 1 par), clique em “Verificar Bater”.</li>
+      </ol>
+
+      <p>
+        <strong>Dica:</strong> Clique em uma carta na sua mão ou na carta comprada para descartá-la (ir para banimento).
+      </p>
+    </div>
     <button id="btnStart" class="btn">Iniciar Jogo</button>
-    <button id="btnHelp" class="btn-help">?</button>
+    <!-- <button id="btnHelp" class="btn-help">?</button> -->
     
+    <h2>Carta Comprada</h2>
+    <!-- Área onde aparece a carta comprada fora da mão -->
+    <div id="boughtCardArea" class="card-area"></div>
+
     <!-- Seção principal do jogo (escondida até iniciar) -->
     <div id="gameSection" class="hidden">
       <div>
         <h2>Sua Mão</h2>
+        <!-- Aqui fica a mão do jogador (11 cartas). -->
         <div id="playerHand" class="card-area limit-3x3"></div>
       </div>
 
@@ -26,9 +59,12 @@
         </div>
         <div class="controls-bot">
           <!-- Botões de organização tipo "switch" -->
-        <button id="btnSortSequence" class="btn sort-switch">Organizar Sequências</button>
-        <button id="btnSortGroup" class="btn sort-switch">Organizar Grupos</button>
-        <button id="btnSortVictory" class="btn sort-switch">IA</button>
+          <!-- <button id="btnSortSequence" class="btn sort-switch">Organizar Sequências</button>
+          <button id="btnSortGroup" class="btn sort-switch">Organizar Grupos</button> -->
+          <button id="btnSortVictory" class="btn sort-switch locked" disabled>
+            IA
+            <div id="scoreNeeded" class="score-needed"></div>
+          </button>
         </div>    
       </div>
 
@@ -44,7 +80,7 @@
     </div>
 
     <!-- Modal de Regras -->
-    <div id="helpModal" class="modal hidden">
+    <!-- <div id="helpModal" class="modal hidden">
       <div class="modal-content">
         <span id="closeModal" class="close">&times;</span>
         <h2>Regras Mahjong-UNO em Casa</h2>
@@ -62,17 +98,18 @@
 
         <h3>Como Jogar</h3>
         <ol>
-          <li>Você começa com 10 cartas.</li>
-          <li>Se tiver 10 cartas, compre 1 carta. Se tiver 11, descarte 1 carta clicando nela.</li>
+          <li>Você começa com 11 cartas na mão.</li>
+          <li>Se tiver 11, compre 1 carta (que aparece em "Carta Comprada").</li>
+          <li>Para continuar, descarte uma carta da mão (então a carta comprada entra na mão) <em>ou</em> descarte diretamente a carta comprada, se quiser se livrar dela.</li>
           <li>Use “Organizar Sequências” ou “Organizar Grupos” para escolher um método de ordenação. Sempre que comprar, o jogo reaplica o método atual.</li>
           <li><strong>Bater</strong>: se conseguir 3/3/3/2 (3 trincas/sequências + 1 par), clique em “Verificar Bater”.</li>
         </ol>
 
         <p>
-          <strong>Dica:</strong> Clique em uma carta na sua mão para descartá-la (ir para banimento).
+          <strong>Dica:</strong> Clique em uma carta na sua mão ou na carta comprada para descartá-la (ir para banimento).
         </p>
       </div>
-    </div>
+    </div> -->
 
     <!-- Mensagens -->
     <div id="message" class="message"></div>
