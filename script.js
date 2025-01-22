@@ -180,6 +180,120 @@ function discardCard(cardIndex) {
 }
 
 /****************************************************
+ * createClusters(hand)
+ * Gera “subgrupos” de cartas que tenham
+ *   (a) mesmo valor (grupo) ou
+ *   (b) valores consecutivos na mesma cor (sequência).
+ ****************************************************/
+function createClusters(hand) {
+  // 1) Separa por valor, para ver possíveis GRUPOS
+  // 2) Separa por cor, para ver possíveis SEQUÊNCIAS
+  // 3) Se alguma carta “encaixa” em ambos, tentaremos
+  //    priorizar agrupar do jeito que formar cluster maior
+
+  // (Abordagem simplificada: agrupar primeiro as SEQUÊNCIAS
+  //  e depois agrupar GRUPOS se restar carta solta.)
+
+  // Passo A) Agrupa por cor e ordena para achar runs
+  const colorMap = {};
+  hand.forEach(card => {
+    if (!colorMap[card.color]) colorMap[card.color] = [];
+    colorMap[card.color].push(card);
+  });
+
+  // Em cada cor, ordena por valor e detecta subsequências
+  let colorClusters = [];
+  Object.keys(colorMap).forEach(color => {
+    let sortedColor = colorMap[color].sort((a,b) => a.value - b.value);
+    let sub = [sortedColor[0]];
+    for (let i = 1; i < sortedColor.length; i++) {
+      if (sortedColor[i].value === sortedColor[i-1].value + 1) {
+        // é consecutivo, continua sub
+        sub.push(sortedColor[i]);
+      } else {
+        // fim de subsequência
+        colorClusters.push([...sub]);
+        sub = [sortedColor[i]];
+      }
+    }
+    // push da última subsequência
+    if (sub.length) colorClusters.push([...sub]);
+  });
+
+  // colorClusters agora é um array de subsequências
+  // (algumas podem ter tamanho 1 ou 2, outras 3+)
+
+  // Passo B) Agrupa por valor para ver GRUPOS
+  const valueMap = {};
+  hand.forEach(card => {
+    if (!valueMap[card.value]) valueMap[card.value] = [];
+    valueMap[card.value].push(card);
+  });
+  let valueClusters = Object.values(valueMap).map(arr => [...arr]);
+
+  // Agora temos potenciais “runs” (colorClusters) e “grupos” (valueClusters).
+  // Precisamos escolher de forma a maximizar cluster maior (3+). 
+  // (Implementação muito simplificada.)
+
+  // Juntamos as sub-listas que tenham tamanho >= 3 (clusters relevantes).
+  let bigClusters = [];
+  let leftover = [...hand]; // iremos remover as cartas que formaram clusters relevantes
+
+// Sequences >= 3
+colorClusters.forEach(seq => {
+  if (seq.length >= 3) {
+    // extrai conjuntos de 3
+    let howManyFull3 = Math.floor(seq.length / 3);
+    for (let i = 0; i < howManyFull3; i++) {
+      let chunk = seq.slice(i*3, i*3 + 3);
+      bigClusters.push(chunk);
+      // remove chunk do leftover
+      chunk.forEach(c => {
+        let idx = leftover.findIndex(x => x.color === c.color && x.value === c.value);
+        if (idx !== -1) leftover.splice(idx, 1);
+      });
+    }
+  }
+});
+
+
+// Groups >= 3
+valueClusters.forEach(gp => {
+  if (gp.length >= 3) {
+    let howManyFull3 = Math.floor(gp.length / 3);
+    for (let i = 0; i < howManyFull3; i++) {
+      let chunk = gp.slice(i*3, i*3 + 3);
+      bigClusters.push(chunk);
+      chunk.forEach(c => {
+        let idx = leftover.findIndex(x => x.color === c.color && x.value === c.value);
+        if (idx !== -1) leftover.splice(idx, 1);
+      });
+    }
+  }
+});
+
+  // bigClusters = “conjuntos” de 3+ (ou seq ou group)
+  // leftover = cartas não encaixadas em bigClusters
+
+  // Ordena bigClusters pelo tamanho (desc) pra priorizar combos grandes
+  bigClusters.sort((a, b) => b.length - a.length);
+
+  // Agora, leftover pode conter “subclusters” de 2 ou 1.
+  // Se quiser, podemos tentar achar “pair” leftover
+  // (exemplo: 2 iguais)
+  // Omitiremos para não deixar muito grande.
+
+  // Montamos “clusters” final = bigClusters + leftover (cada leftover vira cluster isolado)
+  let finalClusters = [...bigClusters];
+  leftover.forEach(card => {
+    finalClusters.push([card]);
+  });
+
+  return finalClusters;
+}
+
+
+/****************************************************
  * VERIFICAR SE PODE BATER (3/3/3/2)
  ****************************************************/
 function checkWin() {
@@ -359,6 +473,40 @@ function reapplySort() {
 }
 
 /****************************************************
+ * FUNÇÃO: sortByVictoryPotential()
+ * Agrupa cartas "prováveis" de formar sets/seqs
+ ****************************************************/
+function sortByVictoryPotential(updateMethod = true) {
+  if (!gameStarted || gameEnded) return;
+
+  if (updateMethod) {
+    currentSortMethod = "victory";
+    selectedSort = "victory"; // Armazena o método escolhido
+    activateSortButton("btnSortVictory");
+  }
+
+  // 1) Criamos “clusters” que evidenciem possíveis sets (mesmo valor)
+  //    ou sequências (mesma cor, valores consecutivos)
+  const clusters = createClusters([...playerHand]);
+
+  // 2) Montamos o array final com esses clusters
+  let finalOrder = [];
+  clusters.forEach(cluster => {
+    finalOrder.push(...cluster);
+  });
+
+  // Substitui a mão pela nova ordem
+  playerHand = finalOrder;
+
+  // Mensagem e re-render
+  document.getElementById("message").textContent = 
+    "Organizado por Potencial de Vitória (agrupando sets/sequências).";
+
+  renderHand();
+}
+
+
+/****************************************************
  * FUNÇÕES PARA ATIVAR/DESATIVAR BOTÕES DE SORT
  ****************************************************/
 function activateSortButton(buttonId) {
@@ -396,6 +544,7 @@ window.onload = () => {
   // Botões para organizar as cartas
   document.getElementById("btnSortSequence").addEventListener("click", () => sortBySequence(true));
   document.getElementById("btnSortGroup").addEventListener("click", () => sortByGroup(true));
+  document.getElementById("btnSortVictory").addEventListener("click", () => sortByVictoryPotential(true));
 
   // Modal de ajuda
   const btnHelp = document.getElementById("btnHelp");
