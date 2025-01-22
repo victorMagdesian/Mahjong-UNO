@@ -156,8 +156,8 @@ function discardCard(cardIndex) {
   if (!gameStarted || gameEnded) return;
 
   // Se está com 12, deve comprar antes
-  if (playerHand.length === 12) {
-    alert("Você está com 12 cartas. Compre antes de descartar!");
+  if (playerHand.length === 11) {
+    alert("Você está com 11 cartas. Compre antes de descartar!");
     return;
   }
 
