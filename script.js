@@ -6,6 +6,7 @@ let playerHand = [];
 let banishedCards = [];
 let gameStarted = false;
 let gameEnded = false;
+let selectedSort = ""; // "sequence" ou "group"
 
 // Armazena o método atual de sort: "sequence", "group" ou null
 let currentSortMethod = null;
@@ -44,7 +45,7 @@ function shuffle(array) {
 function startGame() {
   resetGameState(); // Limpa baralho, mão e estado
 
-  // Distribui 12 cartas
+  // Distribui 11 cartas (conforme seu código original)
   for (let i = 0; i < 11; i++) {
     playerHand.push(deck.pop());
   }
@@ -69,6 +70,7 @@ function resetGameState() {
   gameStarted = false;
   gameEnded = false;
   currentSortMethod = null;
+  selectedSort = ""; // Reinicia o método de ordenação
 
   // Remove destaque dos botões
   deactivateSortButtons();
@@ -97,6 +99,9 @@ function renderHand() {
     });
     handDiv.appendChild(cardEl);
   });
+
+  // Reaplica a ordenação escolhida, se houver
+  reapplySort();
 }
 
 /****************************************************
@@ -139,23 +144,22 @@ function drawCard() {
     return;
   }
 
-  // Compra 1 carta (agora fica com 12)
+  // Compra 1 carta
   const newCard = deck.pop();
   playerHand.push(newCard);
 
-  // Se tiver “renderBoughtCard(newCard)”, chame aqui
   renderHand();
   document.getElementById("message").textContent = 
     "Você comprou uma carta. Agora deve descartar!";
 }
 
 /****************************************************
- * DESCARTAR CARTA (somente se tiver 12)
+ * DESCARTAR CARTA
  ****************************************************/
 function discardCard(cardIndex) {
   if (!gameStarted || gameEnded) return;
 
-  // Se está com 12, deve comprar antes
+  // Se está com 11, deve comprar antes
   if (playerHand.length === 11) {
     alert("Você está com 11 cartas. Compre antes de descartar!");
     return;
@@ -170,8 +174,7 @@ function discardCard(cardIndex) {
   document.getElementById("message").textContent = 
     `Você descartou ${discarded.value} de ${discarded.color}.`;
 
-  // (Se tiver checkWin, chamamos aqui)
-  if (checkWin(playerHand)) {
+  if (checkWin()) {
     showVictoryScreen();
   }
 }
@@ -186,7 +189,7 @@ function checkWin() {
   if (playerHand.length < 11) {
     document.getElementById("message").textContent =
       "Você não tem cartas suficientes para bater.";
-    return;
+    return false;
   }
 
   const currentHand = [...playerHand];
@@ -194,9 +197,11 @@ function checkWin() {
     document.getElementById("message").textContent =
       "Parabéns! Você conseguiu bater (3/3/3/2)! Jogo encerrado.";
     gameEnded = true;
+    return true;
   } else {
     document.getElementById("message").textContent =
       "Ainda não é possível bater.";
+    return false;
   }
 }
 
@@ -252,10 +257,7 @@ function canMahjong(hand) {
   function attempt(remaining, sets = 0) {
     if (sets === 3) {
       // O que sobrar deve ser um par
-      if (remaining.length === 2 && isPair(remaining)) {
-        return true;
-      }
-      return false;
+      return remaining.length === 2 && isPair(remaining);
     }
     for (let combo of combos3) {
       let [x, y, z] = combo;
@@ -285,35 +287,33 @@ function canMahjong(hand) {
 }
 
 /****************************************************
- * ORGANIZAÇÃO DAS CARTAS + 1 e 9 no INÍCIO
- * Com "modo" para não sobrescrever currentSortMethod.
+ * ORGANIZAÇÃO DAS CARTAS
+ * Agora utilizando "selectedSort" para manter a ordenação 
+ * escolhida nas re-renderizações.
  ****************************************************/
 function sortBySequence(updateMethod = true) {
   if (!gameStarted || gameEnded) return;
 
   if (updateMethod) {
     currentSortMethod = "sequence";
+    selectedSort = "sequence"; // Armazena o método escolhido
     activateSortButton("btnSortSequence");
   }
-  // Ordena tudo em uma passada:
-  // 1) Coloca 1 e 9 no início
-  // 2) Depois ordena por cor e valor
+  // Ordena: 1 e 9 têm prioridade no início; depois por cor e valor
   playerHand.sort((a, b) => {
     const isA19 = (a.value === 1 || a.value === 9);
     const isB19 = (b.value === 1 || b.value === 9);
 
-    // Prioridade total para 1 e 9
     if (isA19 && !isB19) return -1;
     if (isB19 && !isA19) return 1;
 
-    // Se ambos ou nenhum é 1/9, ordena por cor e valor
     if (a.color < b.color) return -1;
     if (a.color > b.color) return 1;
     return a.value - b.value;
   });
 
   document.getElementById("message").textContent = 
-    "Organizado por Sequências (1 e 9 no início).";
+    "Organizado por Sequência (1 e 9 no início).";
   renderHand();
 }
 
@@ -322,30 +322,40 @@ function sortByGroup(updateMethod = true) {
 
   if (updateMethod) {
     currentSortMethod = "group";
+    selectedSort = "group"; // Armazena o método escolhido
     activateSortButton("btnSortGroup");
   }
-  // Ordena tudo em uma passada:
-  // 1) Coloca 1 e 9 no início
-  // 2) Depois ordena por valor, em caso de empate, por cor
+  // Ordena: prioridade para 1 e 9; depois por valor, e em caso de empate, por cor
   playerHand.sort((a, b) => {
     const isA19 = (a.value === 1 || a.value === 9);
     const isB19 = (b.value === 1 || b.value === 9);
 
-    // Prioridade total para 1 e 9
     if (isA19 && !isB19) return -1;
     if (isB19 && !isA19) return 1;
 
-    // Se ambos ou nenhum é 1/9, compara pelo valor
     if (a.value !== b.value) {
       return a.value - b.value;
     }
-    // Se tiver o mesmo valor, compara cor
     return a.color.localeCompare(b.color);
   });
 
   document.getElementById("message").textContent = 
-    "Organizado por Grupos (1 e 9 no início).";
+    "Organizado por Grupo (1 e 9 no início).";
   renderHand();
+}
+
+/****************************************************
+ * NOVA FUNÇÃO: REAPLICAR A ORDENAÇÃO ESCOLHIDA
+ ****************************************************/
+function reapplySort() {
+  if (!gameStarted || gameEnded) return;
+  // Se a mão foi modificada e um método foi escolhido, reaplica a ordenação
+  if (selectedSort === "sequence") {
+    // Passa false para não sobrescrever novamente a variável de método
+    sortBySequence(false);
+  } else if (selectedSort === "group") {
+    sortByGroup(false);
+  }
 }
 
 /****************************************************
@@ -355,7 +365,7 @@ function activateSortButton(buttonId) {
   // Desativa todos
   deactivateSortButtons();
 
-  // Ativa o específico
+  // Ativa o botão específico
   const btn = document.getElementById(buttonId);
   if (btn) {
     btn.classList.add("active");
@@ -379,11 +389,11 @@ window.onload = () => {
       "Jogo reiniciado. Clique em 'Iniciar Jogo' para jogar novamente.";
   });
 
-  // Ações de jogo
+  // Ações do jogo
   document.getElementById("btnDraw").addEventListener("click", drawCard);
   document.getElementById("btnCheckWin").addEventListener("click", checkWin);
 
-  // Organizações
+  // Botões para organizar as cartas
   document.getElementById("btnSortSequence").addEventListener("click", () => sortBySequence(true));
   document.getElementById("btnSortGroup").addEventListener("click", () => sortByGroup(true));
 
@@ -392,17 +402,14 @@ window.onload = () => {
   const helpModal = document.getElementById("helpModal");
   const closeModal = document.getElementById("closeModal");
 
-  // Abrir modal de ajuda
   btnHelp.addEventListener("click", () => {
     helpModal.classList.remove("hidden");
   });
 
-  // Fechar modal ao clicar no X
   closeModal.addEventListener("click", () => {
     helpModal.classList.add("hidden");
   });
 
-  // Fechar modal clicando no fundo
   window.addEventListener("click", (event) => {
     if (event.target === helpModal) {
       helpModal.classList.add("hidden");
