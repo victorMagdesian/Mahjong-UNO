@@ -6,10 +6,11 @@ let playerHand = [];
 let banishedCards = [];
 let gameStarted = false;
 let gameEnded = false;
-let selectedSort = ""; // "sequence" ou "group"
-
-// Armazena o método atual de sort: "sequence", "group" ou null
+let selectedSort = ""; // "sequence" | "group" | "victory"
 let currentSortMethod = null;
+
+let playerScore = 0; // Começa em 0
+let boughtCard = null; // Carta comprada, fora da mão
 
 /****************************************************
  * FUNÇÃO: CRIAR BARALHO (UNO 1–9, 4 cores, 2 cópias)
@@ -40,17 +41,16 @@ function shuffle(array) {
 }
 
 /****************************************************
- * INICIAR JOGO (mão com 12 cartas)
+ * INICIAR JOGO (mão com 11 cartas)
  ****************************************************/
 function startGame() {
-  resetGameState(); // Limpa baralho, mão e estado
+  resetGameState();
 
-  // Distribui 11 cartas (conforme seu código original)
+  // Dá 11 cartas
   for (let i = 0; i < 11; i++) {
     playerHand.push(deck.pop());
   }
 
-  // Exibe a seção do jogo
   document.getElementById("gameSection").classList.remove("hidden");
   document.getElementById("message").textContent = "Jogo iniciado!";
   gameStarted = true;
@@ -67,17 +67,23 @@ function resetGameState() {
   deck = shuffle(createDeck());
   playerHand = [];
   banishedCards = [];
+  boughtCard = null;
+
   gameStarted = false;
   gameEnded = false;
   currentSortMethod = null;
-  selectedSort = ""; // Reinicia o método de ordenação
+  selectedSort = "";
 
-  // Remove destaque dos botões
-  deactivateSortButtons();
+  // Desativa IA (caso tenha sido liberada)
+  const iaBtn = document.getElementById("btnSortVictory");
+  iaBtn.disabled = true;
+  iaBtn.classList.add("locked");
+  updateIAScoreStatus();
 
-  // Esconde a seção do jogo até clicar em "Iniciar Jogo"
+  // Esconde a seção do jogo
   document.getElementById("gameSection").classList.add("hidden");
   document.getElementById("message").textContent = "";
+  renderBoughtCard();
 }
 
 /****************************************************
@@ -93,7 +99,7 @@ function renderHand() {
     cardEl.textContent = card.value;
     cardEl.setAttribute("data-value", card.value);
 
-    // Clique descarta a carta (vai para banimento)
+    // Clique: descarta esta carta da mão
     cardEl.addEventListener("click", () => {
       discardCard(index);
     });
@@ -122,20 +128,41 @@ function renderBanishedCards() {
     const cardEl = document.createElement("div");
     cardEl.classList.add("card", card.color);
     cardEl.textContent = card.value;
-    cardEl.setAttribute("data-value", card.value);
     banishedDiv.appendChild(cardEl);
   });
 }
 
 /****************************************************
- * COMPRAR CARTA (somente se tiver 12)
+ * RENDERIZAR CARTA COMPRADA
+ ****************************************************/
+function renderBoughtCard() {
+  const area = document.getElementById("boughtCardArea");
+  area.innerHTML = "";
+
+  if (!boughtCard) return;
+
+  const cardEl = document.createElement("div");
+  cardEl.classList.add("card", boughtCard.color);
+  cardEl.textContent = boughtCard.value;
+  cardEl.setAttribute("data-value", boughtCard.value);
+
+  // Permite descartar a carta comprada diretamente
+  cardEl.addEventListener("click", () => {
+    discardBoughtCard();
+  });
+
+  area.appendChild(cardEl);
+}
+
+/****************************************************
+ * COMPRAR CARTA
  ****************************************************/
 function drawCard() {
   if (!gameStarted || gameEnded) return;
 
-  // Se já tem 12, não pode comprar
-  if (playerHand.length === 12) {
-    alert("Você está com 12 cartas. Descarte antes de comprar novamente!");
+  // Se já tem uma carta comprada pendente, não pode comprar de novo
+  if (boughtCard !== null) {
+    alert("Você já comprou e não descartou ainda!");
     return;
   }
 
@@ -144,226 +171,87 @@ function drawCard() {
     return;
   }
 
-  // Compra 1 carta
-  const newCard = deck.pop();
-  playerHand.push(newCard);
-
-  renderHand();
-  document.getElementById("message").textContent = 
-    "Você comprou uma carta. Agora deve descartar!";
+  // Puxa 1 carta pro boughtCard
+  boughtCard = deck.pop();
+  renderBoughtCard();
+  document.getElementById("message").textContent =
+    "Você comprou uma carta. Descarte uma da mão OU descarte a própria carta comprada.";
 }
 
 /****************************************************
- * reasonNotBater(hand)
- * Faz uma análise minimalista da mão e retorna 
- * uma string com possíveis causas ou “sobras” que
- * não formaram 3/3/3/2.
- ****************************************************/
-function reasonNotBater(hand) {
-  // Se canMahjong(hand) é true, então “Você já bateu”.
-  if (canMahjong(hand)) {
-    return "Você já está em formato 3/3/3 + 2!";
-  }
-
-  // Senão, podemos ver (de modo beeem simples) quantos sets/seqs ela forma:
-  let clusters = createClusters(hand); 
-  // createClusters já gera subgrupos >=3 e leftover
-  // mas não garante EXACT 3 sets e 1 par. 
-  // Então, para um “motivo resumido” basta ver:
-  
-  // Quantos clusters com length==3 e quantos leftover de 1 ou 2
-  let tripleCount = 0;
-  let pairCount = 0;
-  let singleCount = 0;
-
-  clusters.forEach(arr => {
-    if (arr.length === 3) tripleCount++;
-    else if (arr.length === 2) pairCount++;
-    else if (arr.length === 1) singleCount++;
-    // se arr.length>3, pode ter sido fatiado. 
-    // mas assumindo que createClusters retira blocos de 3 e leftover de 1 ou 2
-  });
-
-  // Tentar deduzir um “por que falhou”:
-  // Precisamos 3 “triples” + 1 “pair”
-  if (tripleCount < 3) {
-    return `Faltam mais sets de 3. Você só tem ${tripleCount} sets de 3 formados.`;
-  }
-  else if (pairCount === 0) {
-    return `Falta um par (2 iguais). Você não formou par. Sobras: ${singleCount} cartas soltas.`;
-  }
-  // Em tese, se tripleCount>=3 e pairCount>=1, já bateu, mas vamos
-  // enfatizar single leftover, etc.
-  return `Você quase conseguiu. Verifique se alguma carta extra está impedindo a formação exata 3/3/3/2.`;
-}
-
-
-/****************************************************
- * DESCARTAR CARTA
+ * DESCARTAR CARTA DA MÃO
+ * (Ao clicar numa carta da mão)
  ****************************************************/
 function discardCard(cardIndex) {
   if (!gameStarted || gameEnded) return;
 
-  // Se está com 11, deve comprar antes
-  if (playerHand.length === 11) {
-    alert("Você está com 11 cartas. Compre antes de descartar!");
+  // Se não comprou nada (boughtCard===null), não pode descartar da mão
+  if (!boughtCard) {
+    alert("Você não tem carta comprada. Compre antes de descartar da mão!");
     return;
   }
 
-  // Remove a carta escolhida da mão (vai pra banidos)
+  // Remove a carta escolhida da MÃO -> banidos
   const discarded = playerHand.splice(cardIndex, 1)[0];
   banishedCards.push(discarded);
 
+  // Agora, insere a boughtCard na mão
+  playerHand.push(boughtCard);
+  boughtCard = null;
+
+  renderBoughtCard();   // Remove a exibição
   renderHand();
   renderBanishedCards();
-  document.getElementById("message").textContent = 
-    `Você descartou ${discarded.value} de ${discarded.color}.`;
 
-  if (checkWin()) {
-  } else {
-    if (!canMahjong(playerHand)) {
-      const msg = reasonNotBater(playerHand);
-      console.log("Motivo de não bater:", msg);
-    }
-  }
-
-  let { chance, reason } = chanceOfVictoryNextCard();
-  console.log(`Chance de bater na próxima carta: ${(chance*100).toFixed(1)}%`);
-  console.log(`Resumo: ${reason}`);
+  // Se quiser checar
+  checkWin();
 }
 
 /****************************************************
- * createClusters(hand)
- * Gera “subgrupos” de cartas que tenham
- *   (a) mesmo valor (grupo) ou
- *   (b) valores consecutivos na mesma cor (sequência).
+ * DESCARTAR A CARTA COMPRADA
  ****************************************************/
-function createClusters(hand) {
-  // 1) Separa por valor, para ver possíveis GRUPOS
-  // 2) Separa por cor, para ver possíveis SEQUÊNCIAS
-  // 3) Se alguma carta “encaixa” em ambos, tentaremos
-  //    priorizar agrupar do jeito que formar cluster maior
+function discardBoughtCard() {
+  if (!gameStarted || gameEnded) return;
 
-  // (Abordagem simplificada: agrupar primeiro as SEQUÊNCIAS
-  //  e depois agrupar GRUPOS se restar carta solta.)
-
-  // Passo A) Agrupa por cor e ordena para achar runs
-  const colorMap = {};
-  hand.forEach(card => {
-    if (!colorMap[card.color]) colorMap[card.color] = [];
-    colorMap[card.color].push(card);
-  });
-
-  // Em cada cor, ordena por valor e detecta subsequências
-  let colorClusters = [];
-  Object.keys(colorMap).forEach(color => {
-    let sortedColor = colorMap[color].sort((a,b) => a.value - b.value);
-    let sub = [sortedColor[0]];
-    for (let i = 1; i < sortedColor.length; i++) {
-      if (sortedColor[i].value === sortedColor[i-1].value + 1) {
-        // é consecutivo, continua sub
-        sub.push(sortedColor[i]);
-      } else {
-        // fim de subsequência
-        colorClusters.push([...sub]);
-        sub = [sortedColor[i]];
-      }
-    }
-    // push da última subsequência
-    if (sub.length) colorClusters.push([...sub]);
-  });
-
-  // colorClusters agora é um array de subsequências
-  // (algumas podem ter tamanho 1 ou 2, outras 3+)
-
-  // Passo B) Agrupa por valor para ver GRUPOS
-  const valueMap = {};
-  hand.forEach(card => {
-    if (!valueMap[card.value]) valueMap[card.value] = [];
-    valueMap[card.value].push(card);
-  });
-  let valueClusters = Object.values(valueMap).map(arr => [...arr]);
-
-  // Agora temos potenciais “runs” (colorClusters) e “grupos” (valueClusters).
-  // Precisamos escolher de forma a maximizar cluster maior (3+). 
-  // (Implementação muito simplificada.)
-
-  // Juntamos as sub-listas que tenham tamanho >= 3 (clusters relevantes).
-  let bigClusters = [];
-  let leftover = [...hand]; // iremos remover as cartas que formaram clusters relevantes
-
-// Sequences >= 3
-colorClusters.forEach(seq => {
-  if (seq.length >= 3) {
-    // extrai conjuntos de 3
-    let howManyFull3 = Math.floor(seq.length / 3);
-    for (let i = 0; i < howManyFull3; i++) {
-      let chunk = seq.slice(i*3, i*3 + 3);
-      bigClusters.push(chunk);
-      // remove chunk do leftover
-      chunk.forEach(c => {
-        let idx = leftover.findIndex(x => x.color === c.color && x.value === c.value);
-        if (idx !== -1) leftover.splice(idx, 1);
-      });
-    }
+  if (!boughtCard) {
+    alert("Você não tem carta comprada para descartar!");
+    return;
   }
-});
 
+  // Descarta a própria carta comprada
+  banishedCards.push(boughtCard);
+  boughtCard = null;
 
-// Groups >= 3
-valueClusters.forEach(gp => {
-  if (gp.length >= 3) {
-    let howManyFull3 = Math.floor(gp.length / 3);
-    for (let i = 0; i < howManyFull3; i++) {
-      let chunk = gp.slice(i*3, i*3 + 3);
-      bigClusters.push(chunk);
-      chunk.forEach(c => {
-        let idx = leftover.findIndex(x => x.color === c.color && x.value === c.value);
-        if (idx !== -1) leftover.splice(idx, 1);
-      });
-    }
-  }
-});
+  renderBoughtCard();
+  renderBanishedCards();
+  document.getElementById("message").textContent =
+    "Você descartou a carta comprada. Sua mão não mudou.";
 
-  // bigClusters = “conjuntos” de 3+ (ou seq ou group)
-  // leftover = cartas não encaixadas em bigClusters
-
-  // Ordena bigClusters pelo tamanho (desc) pra priorizar combos grandes
-  bigClusters.sort((a, b) => b.length - a.length);
-
-  // Agora, leftover pode conter “subclusters” de 2 ou 1.
-  // Se quiser, podemos tentar achar “pair” leftover
-  // (exemplo: 2 iguais)
-  // Omitiremos para não deixar muito grande.
-
-  // Montamos “clusters” final = bigClusters + leftover (cada leftover vira cluster isolado)
-  let finalClusters = [...bigClusters];
-  leftover.forEach(card => {
-    finalClusters.push([card]);
-  });
-
-  return finalClusters;
+  // Se quiser checar vitória (mão não mudou)
+  checkWin();
 }
 
-
 /****************************************************
- * VERIFICAR SE PODE BATER (3/3/3/2)
+ * VERIFICAR SE PODE BATER (3/3/3 + 2)
  ****************************************************/
 function checkWin() {
   if (!gameStarted || gameEnded) return;
 
-  // Precisa ter pelo menos 11 cartas para verificar
   if (playerHand.length < 11) {
     document.getElementById("message").textContent =
       "Você não tem cartas suficientes para bater.";
     return false;
   }
 
-  const currentHand = [...playerHand];
-  if (canMahjong(currentHand)) {
+  if (canMahjong([...playerHand])) {
     document.getElementById("message").textContent =
       "Parabéns! Você conseguiu bater (3/3/3/2)! Jogo encerrado.";
     gameEnded = true;
+
+    // +25 pontos a cada vitória
+    playerScore += 25;
+    updateIAScoreStatus(); // Atualiza o texto “Faltam X pts” / “Liberada”
+
     return true;
   } else {
     document.getElementById("message").textContent =
@@ -373,113 +261,149 @@ function checkWin() {
 }
 
 /****************************************************
- * chanceOfVictoryNextCard()
- * Retorna um objeto {chance, reason}
+ * updateIAScoreStatus: exibe quantos pontos faltam
  ****************************************************/
-function chanceOfVictoryNextCard() {
-  // Se não houver cartas no deck, chance é 0
-  if (deck.length === 0) {
-    return { chance: 0, reason: "Baralho acabou." };
+function updateIAScoreStatus() {
+  const neededSpan = document.getElementById("scoreNeeded");
+  const iaBtn = document.getElementById("btnSortVictory");
+
+  if (playerScore >= 1000) {
+    neededSpan.textContent = "Liberada!";
+    iaBtn.disabled = false;
+    iaBtn.classList.remove("locked");
+  } else {
+    const falta = 1000 - playerScore;
+    neededSpan.textContent = `Faltam ${falta} pts`;
   }
-
-  let possible = 0;
-  let deckCount = deck.length;
-
-  // Tenta adicionar cada carta do deck hipoteticamente à mão
-  // e checa se `canMahjong` passaria a ser true
-  for (let i = 0; i < deck.length; i++) {
-    const card = deck[i];
-    // Monta “mão hipotética”
-    let hypotheticalHand = [...playerHand, card];
-    if (canMahjong(hypotheticalHand)) {
-      possible++;
-    }
-  }
-
-  let chance = possible / deckCount;
-
-  // Monta um reason (bem simples). 
-  // Exemplo: “X das Y cartas do baralho te fariam bater.”
-  let reason = `${possible} das ${deckCount} cartas possíveis te dariam vitória imediata.`;
-  if (possible === 0) {
-    reason = `Nenhuma das ${deckCount} cartas do baralho te faz bater agora. Continue tentando.`;
-  }
-
-  return { chance, reason };
 }
 
+/****************************************************
+ * createClusters
+ * Gera subgrupos de 3 (runs ou groups), leftover, etc.
+ ****************************************************/
+function createClusters(hand) {
+  // Agrupa por cor -> detecta subsequências
+  const colorMap = {};
+  hand.forEach(card => {
+    if (!colorMap[card.color]) colorMap[card.color] = [];
+    colorMap[card.color].push(card);
+  });
+  let colorClusters = [];
+  for (let color in colorMap) {
+    let sortedC = colorMap[color].sort((a,b) => a.value - b.value);
+    let sub = [sortedC[0]];
+    for (let i = 1; i < sortedC.length; i++) {
+      if (sortedC[i].value === sortedC[i-1].value + 1) {
+        sub.push(sortedC[i]);
+      } else {
+        colorClusters.push([...sub]);
+        sub = [sortedC[i]];
+      }
+    }
+    if (sub.length) colorClusters.push([...sub]);
+  }
+
+  // Agrupa por valor -> detecta groups
+  const valueMap = {};
+  hand.forEach(card => {
+    if (!valueMap[card.value]) valueMap[card.value] = [];
+    valueMap[card.value].push(card);
+  });
+  let valueClusters = Object.values(valueMap);
+
+  // Monta bigClusters >=3
+  let bigClusters = [];
+  let leftover = [...hand];
+
+  // Sequences >=3 (fatias de 3)
+  colorClusters.forEach(seq => {
+    if (seq.length >= 3) {
+      let howManyFull3 = Math.floor(seq.length / 3);
+      for (let i = 0; i < howManyFull3; i++) {
+        let chunk = seq.slice(i*3, i*3+3);
+        bigClusters.push(chunk);
+        chunk.forEach(c => {
+          let idx = leftover.findIndex(x => x.color===c.color && x.value===c.value);
+          if (idx!==-1) leftover.splice(idx,1);
+        });
+      }
+    }
+  });
+
+  // Groups >=3
+  valueClusters.forEach(gp => {
+    if (gp.length >= 3) {
+      let howManyFull3 = Math.floor(gp.length / 3);
+      for (let i=0; i<howManyFull3; i++){
+        let chunk = gp.slice(i*3, i*3+3);
+        bigClusters.push(chunk);
+        chunk.forEach(c => {
+          let idx = leftover.findIndex(x=>x.color===c.color && x.value===c.value);
+          if (idx!==-1) leftover.splice(idx,1);
+        });
+      }
+    }
+  });
+
+  // Ordena bigClusters
+  bigClusters.sort((a,b)=>b.length - a.length);
+
+  // leftover -> 1 ou 2
+  let finalClusters = [...bigClusters];
+  leftover.forEach(card=>{
+    finalClusters.push([card]);
+  });
+
+  return finalClusters;
+}
 
 /****************************************************
- * canMahjong: lógica simples p/ 3/3/3 + 2
+ * canMahjong: verif 3/3/3 + 2
  ****************************************************/
 function canMahjong(hand) {
-  // Ordena normal (por cor, depois valor)
+  // Ordena normal
   hand.sort((a, b) => {
-    if (a.color === b.color) {
-      return a.value - b.value;
-    }
+    if (a.color === b.color) return a.value - b.value;
     return a.color.localeCompare(b.color);
   });
 
   function isRun(c) {
-    if (c.length !== 3) return false;
-    const [c1, c2, c3] = c;
-    return (
-      c1.color === c2.color &&
-      c2.color === c3.color &&
-      c2.value === c1.value + 1 &&
-      c3.value === c2.value + 1
-    );
+    return c.length===3
+      && c[0].color===c[1].color && c[1].color===c[2].color
+      && c[1].value===c[0].value+1
+      && c[2].value===c[1].value+1;
   }
-
   function isGroup(c) {
-    if (c.length !== 3) return false;
-    const [c1, c2, c3] = c;
-    return (
-      c1.value === c2.value &&
-      c2.value === c3.value &&
-      c1.color !== c2.color &&
-      c2.color !== c3.color &&
-      c1.color !== c3.color
-    );
+    return c.length===3
+      && c[0].value===c[1].value && c[1].value===c[2].value
+      && c[0].color!==c[1].color && c[1].color!==c[2].color && c[0].color!==c[2].color;
   }
-
   function isPair(c) {
-    return c.length === 2 && c[0].value === c[1].value;
+    return c.length===2 && c[0].value===c[1].value;
   }
 
-  // Gera combinações de 3
-  let combos3 = [];
-  for (let i = 0; i < hand.length - 2; i++) {
-    for (let j = i + 1; j < hand.length - 1; j++) {
-      for (let k = j + 1; k < hand.length; k++) {
-        combos3.push([i, j, k]);
+  // Gera combos de 3
+  let combos3=[];
+  for (let i=0; i<hand.length-2;i++){
+    for (let j=i+1;j<hand.length-1;j++){
+      for (let k=j+1;k<hand.length;k++){
+        combos3.push([i,j,k]);
       }
     }
   }
 
-  function attempt(remaining, sets = 0) {
-    if (sets === 3) {
-      // O que sobrar deve ser um par
-      return remaining.length === 2 && isPair(remaining);
+  function attempt(remaining, sets=0) {
+    if (sets===3) {
+      // sobrar par
+      return (remaining.length===2 && isPair(remaining));
     }
     for (let combo of combos3) {
-      let [x, y, z] = combo;
-      if (
-        x >= remaining.length ||
-        y >= remaining.length ||
-        z >= remaining.length
-      ) {
-        continue;
-      }
-      let testSet = [remaining[x], remaining[y], remaining[z]].sort(
-        (a, b) => a.value - b.value
-      );
-      if (isRun(testSet) || isGroup(testSet)) {
-        let newRem = remaining.filter(
-          (_, idx) => idx !== x && idx !== y && idx !== z
-        );
-        if (attempt(newRem, sets + 1)) {
+      let [x,y,z]=combo;
+      if (x>=remaining.length||y>=remaining.length||z>=remaining.length) continue;
+      let testSet=[remaining[x],remaining[y],remaining[z]].sort((a,b)=>a.value-b.value);
+      if (isRun(testSet)||isGroup(testSet)) {
+        let newRem=remaining.filter((_,idx)=>idx!==x&&idx!==y&&idx!==z);
+        if (attempt(newRem, sets+1)) {
           return true;
         }
       }
@@ -491,167 +415,188 @@ function canMahjong(hand) {
 }
 
 /****************************************************
- * ORGANIZAÇÃO DAS CARTAS
- * Agora utilizando "selectedSort" para manter a ordenação 
- * escolhida nas re-renderizações.
+ * reasonNotBater: por que falhou
  ****************************************************/
-function sortBySequence(updateMethod = true) {
-  if (!gameStarted || gameEnded) return;
+function reasonNotBater(hand) {
+  if (canMahjong(hand)) {
+    return "Você já está em formato 3/3/3 + 2!";
+  }
+  let clusters=createClusters(hand);
+  let tripleCount=0, pairCount=0, singleCount=0;
+  clusters.forEach(arr=>{
+    if (arr.length===3) tripleCount++;
+    else if (arr.length===2) pairCount++;
+    else if (arr.length===1) singleCount++;
+  });
+  if (tripleCount<3) {
+    return `Faltam mais sets de 3. Você só tem ${tripleCount}.`;
+  } else if (pairCount===0) {
+    return `Falta um par. Você não formou par (sobras: ${singleCount} cartas).`;
+  }
+  return `Você quase conseguiu, algo sobrou em singles.`;
+}
 
+/****************************************************
+ * chanceOfVictoryNextCard()
+ ****************************************************/
+function chanceOfVictoryNextCard() {
+  if (deck.length===0) return {chance:0, reason:"Baralho acabou."};
+
+  let possible=0, deckCount=deck.length;
+
+  for (let i=0;i<deck.length;i++){
+    let card=deck[i];
+    let hypothetical=[...playerHand, card];
+    if (canMahjong(hypothetical)) {
+      possible++;
+    }
+  }
+  let chance= possible/deckCount;
+  let reason= `${possible} das ${deckCount} cartas possíveis te dariam vitória imediata.`;
+  if (!possible) {
+    reason= `Nenhuma das ${deckCount} cartas te faz bater agora. Continue tentando.`;
+  }
+  return {chance, reason};
+}
+
+/****************************************************
+ * REAPLICAR ORDENACAO
+ ****************************************************/
+function reapplySort() {
+  if (!gameStarted || gameEnded) return;
+  if (selectedSort==="sequence") {
+    sortBySequence(false);
+  } else if (selectedSort==="group") {
+    sortByGroup(false);
+  } else if (selectedSort==="victory") {
+    sortByVictoryPotential(false);
+  }
+}
+
+/****************************************************
+ * sortBySequence
+ ****************************************************/
+function sortBySequence(updateMethod=true) {
+  if (!gameStarted||gameEnded) return;
   if (updateMethod) {
-    currentSortMethod = "sequence";
-    selectedSort = "sequence"; // Armazena o método escolhido
+    currentSortMethod="sequence";
+    selectedSort="sequence";
     activateSortButton("btnSortSequence");
   }
-  // Ordena: 1 e 9 têm prioridade no início; depois por cor e valor
-  playerHand.sort((a, b) => {
-    const isA19 = (a.value === 1 || a.value === 9);
-    const isB19 = (b.value === 1 || b.value === 9);
+  // 1 e 9 prioridade, depois cor, depois valor
+  playerHand.sort((a,b)=>{
+    let isA19=(a.value===1||a.value===9);
+    let isB19=(b.value===1||b.value===9);
+    if (isA19&&!isB19) return -1;
+    if (isB19&&!isA19) return 1;
 
-    if (isA19 && !isB19) return -1;
-    if (isB19 && !isA19) return 1;
-
-    if (a.color < b.color) return -1;
-    if (a.color > b.color) return 1;
-    return a.value - b.value;
+    if (a.color<b.color) return -1;
+    if (a.color>b.color) return 1;
+    return a.value-b.value;
   });
-
-  document.getElementById("message").textContent = 
+  document.getElementById("message").textContent=
     "Organizado por Sequência (1 e 9 no início).";
   renderHand();
 }
 
-function sortByGroup(updateMethod = true) {
-  if (!gameStarted || gameEnded) return;
-
+/****************************************************
+ * sortByGroup
+ ****************************************************/
+function sortByGroup(updateMethod=true) {
+  if (!gameStarted||gameEnded) return;
   if (updateMethod) {
-    currentSortMethod = "group";
-    selectedSort = "group"; // Armazena o método escolhido
+    currentSortMethod="group";
+    selectedSort="group";
     activateSortButton("btnSortGroup");
   }
-  // Ordena: prioridade para 1 e 9; depois por valor, e em caso de empate, por cor
-  playerHand.sort((a, b) => {
-    const isA19 = (a.value === 1 || a.value === 9);
-    const isB19 = (b.value === 1 || b.value === 9);
+  // 1 e 9 prioridade, depois valor, depois cor
+  playerHand.sort((a,b)=>{
+    let isA19=(a.value===1||a.value===9);
+    let isB19=(b.value===1||b.value===9);
+    if (isA19&&!isB19) return -1;
+    if (isB19&&!isA19) return 1;
 
-    if (isA19 && !isB19) return -1;
-    if (isB19 && !isA19) return 1;
-
-    if (a.value !== b.value) {
-      return a.value - b.value;
-    }
+    if (a.value!==b.value) return a.value-b.value;
     return a.color.localeCompare(b.color);
   });
-
-  document.getElementById("message").textContent = 
+  document.getElementById("message").textContent=
     "Organizado por Grupo (1 e 9 no início).";
   renderHand();
 }
 
 /****************************************************
- * NOVA FUNÇÃO: REAPLICAR A ORDENAÇÃO ESCOLHIDA
+ * sortByVictoryPotential
  ****************************************************/
-function reapplySort() {
-  if (!gameStarted || gameEnded) return;
-  // Se a mão foi modificada e um método foi escolhido, reaplica a ordenação
-  if (selectedSort === "sequence") {
-    // Passa false para não sobrescrever novamente a variável de método
-    sortBySequence(false);
-  } else if (selectedSort === "group") {
-    sortByGroup(false);
-  }
-}
-
-/****************************************************
- * FUNÇÃO: sortByVictoryPotential()
- * Agrupa cartas "prováveis" de formar sets/seqs
- ****************************************************/
-function sortByVictoryPotential(updateMethod = true) {
-  if (!gameStarted || gameEnded) return;
-
+function sortByVictoryPotential(updateMethod=true) {
+  if (!gameStarted||gameEnded) return;
   if (updateMethod) {
-    currentSortMethod = "victory";
-    selectedSort = "victory"; // Armazena o método escolhido
+    currentSortMethod="victory";
+    selectedSort="victory";
     activateSortButton("btnSortVictory");
   }
+  // Gera clusters e agrupa no final
+  let clusters=createClusters(playerHand);
+  let finalOrder=[];
+  clusters.forEach(cl=>{ finalOrder.push(...cl); });
+  playerHand=finalOrder;
 
-  // 1) Criamos “clusters” que evidenciem possíveis sets (mesmo valor)
-  //    ou sequências (mesma cor, valores consecutivos)
-  const clusters = createClusters([...playerHand]);
-
-  // 2) Montamos o array final com esses clusters
-  let finalOrder = [];
-  clusters.forEach(cluster => {
-    finalOrder.push(...cluster);
-  });
-
-  // Substitui a mão pela nova ordem
-  playerHand = finalOrder;
-
-  // Mensagem e re-render
-  document.getElementById("message").textContent = 
+  document.getElementById("message").textContent=
     "Organizado por Potencial de Vitória (agrupando sets/sequências).";
-
   renderHand();
 }
 
-
 /****************************************************
- * FUNÇÕES PARA ATIVAR/DESATIVAR BOTÕES DE SORT
+ * Ativar/Desativar Botoes
  ****************************************************/
 function activateSortButton(buttonId) {
-  // Desativa todos
   deactivateSortButtons();
-
-  // Ativa o botão específico
   const btn = document.getElementById(buttonId);
-  if (btn) {
-    btn.classList.add("active");
-  }
+  if (btn) btn.classList.add("active");
 }
 
 function deactivateSortButtons() {
   const switches = document.querySelectorAll(".sort-switch");
-  switches.forEach(s => s.classList.remove("active"));
+  switches.forEach(s=>s.classList.remove("active"));
 }
 
 /****************************************************
  * EVENT LISTENERS
  ****************************************************/
-window.onload = () => {
+window.onload=()=>{
   // Botões iniciais
   document.getElementById("btnStart").addEventListener("click", startGame);
-  document.getElementById("btnRestart").addEventListener("click", () => {
+  document.getElementById("btnRestart").addEventListener("click", ()=>{
     resetGameState();
-    document.getElementById("message").textContent =
+    document.getElementById("message").textContent=
       "Jogo reiniciado. Clique em 'Iniciar Jogo' para jogar novamente.";
   });
 
-  // Ações do jogo
+  // Botões de ação
   document.getElementById("btnDraw").addEventListener("click", drawCard);
   document.getElementById("btnCheckWin").addEventListener("click", checkWin);
 
-  // Botões para organizar as cartas
-  document.getElementById("btnSortSequence").addEventListener("click", () => sortBySequence(true));
-  document.getElementById("btnSortGroup").addEventListener("click", () => sortByGroup(true));
-  document.getElementById("btnSortVictory").addEventListener("click", () => sortByVictoryPotential(true));
+  // Botões de organização
+  document.getElementById("btnSortSequence").addEventListener("click", ()=>sortBySequence(true));
+  document.getElementById("btnSortGroup").addEventListener("click", ()=>sortByGroup(true));
+  document.getElementById("btnSortVictory").addEventListener("click", ()=>sortByVictoryPotential(true));
 
   // Modal de ajuda
   const btnHelp = document.getElementById("btnHelp");
   const helpModal = document.getElementById("helpModal");
   const closeModal = document.getElementById("closeModal");
 
-  btnHelp.addEventListener("click", () => {
+  btnHelp.addEventListener("click", ()=>{
     helpModal.classList.remove("hidden");
   });
-
-  closeModal.addEventListener("click", () => {
+  closeModal.addEventListener("click", ()=>{
     helpModal.classList.add("hidden");
   });
-
-  window.addEventListener("click", (event) => {
-    if (event.target === helpModal) {
+  window.addEventListener("click",(event)=>{
+    if (event.target===helpModal) {
       helpModal.classList.add("hidden");
     }
   });
+
+  // Atualiza IA pontuação inicial
+  updateIAScoreStatus();
 };
