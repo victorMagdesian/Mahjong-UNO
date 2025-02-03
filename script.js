@@ -267,12 +267,12 @@ function updateIAScoreStatus() {
   const neededSpan = document.getElementById("scoreNeeded");
   const iaBtn = document.getElementById("btnSortVictory");
 
-  if (playerScore >= 1000) {
+  if (playerScore >= 0) {
     neededSpan.textContent = "Liberada!";
     iaBtn.disabled = false;
     iaBtn.classList.remove("locked");
   } else {
-    const falta = 1000 - playerScore;
+    const falta = 0 - playerScore;
     neededSpan.textContent = `Faltam ${falta} pts`;
   }
 }
